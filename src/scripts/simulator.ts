@@ -249,7 +249,7 @@ function init(el: HTMLElement) {
     const dice = t.closest<HTMLElement>('[data-rg]');
     if (dice) {
       randomizeGroup(dice.dataset.rg!);
-      if (state.mode === 'match') { const card = el.querySelector(`.group[data-g="${dice.dataset.rg}"]`)!; card.querySelectorAll<HTMLInputElement>('input[data-g]').forEach((inp) => { inp.value = state.g[inp.dataset.g!][+inp.dataset.i!][inp.dataset.s as 'sa' | 'sb']; }); renderStanding(dice.dataset.rg!); }
+      if (state.mode === 'match') { const gl = dice.dataset.rg!; const card = el.querySelector(`.group[data-g="${gl}"]`); if (card) { card.replaceWith(matchCard(gl)); renderStanding(gl); } }
       else buildGroups();
       updateProgress(); save(); return;
     }
