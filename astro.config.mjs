@@ -19,6 +19,7 @@ export default defineConfig({
         defaultLocale: 'es',
         locales: { es: 'es-ES', en: 'en', pt: 'pt' },
       },
+      filter: (page) => !page.includes('/og/'),
       serialize(item) {
         item.lastmod = LASTMOD;
         return item;
