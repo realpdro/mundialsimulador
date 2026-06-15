@@ -10,7 +10,8 @@
     "og": "node scripts/make-og.mjs",
     "deploy:test": "node scripts/deploy.mjs --test",
     "results": "node scripts/fetch-results.mjs",
-    "deploy": "node scripts/fetch-results.mjs && astro build && node scripts/deploy.mjs"
+    "deploy": "node scripts/publish.mjs",
+    "deploy:ci": "node scripts/publish.mjs --ci"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.3.0",

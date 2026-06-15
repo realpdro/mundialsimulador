@@ -1,5 +1,6 @@
-// Descarga los resultados reales del Mundial (football-data.org) y los guarda
-// en src/data/results.json para que el build los muestre. 1 llamada por ejecución.
+// Descarga los resultados reales del Mundial (football-data.org) y los guarda en
+// src/data/results.json. 1 llamada por ejecución. Código de salida: 0 = cambió y se
+// reescribió; 3 = sin cambios reales / error / sin clave (no hay que redesplegar).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -33,7 +34,6 @@ const EN = {
   POR: 'Portugal', COL: 'Colombia', UZB: 'Uzbekistan', COD: 'DR Congo',
   ENG: 'England', CRO: 'Croatia', GHA: 'Ghana', PAN: 'Panama',
 };
-// Alias para los nombres que la API escribe distinto (normalizados)
 const ALIASES = {
   unitedstates: 'USA', unitedstatesofamerica: 'USA',
   bosniaherzegovina: 'BIH', bosniaandherzegovina: 'BIH',
@@ -50,38 +50,49 @@ const LOOKUP = {};
 for (const [code, en] of Object.entries(EN)) LOOKUP[norm(en)] = code;
 const resolve = (name) => { const n = norm(name); return ALIASES[n] || LOOKUP[n] || null; };
 
-const env = loadEnv();
-const KEY = env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY;
-if (!KEY) { console.warn('⚠️  Falta FOOTBALL_API_KEY; se mantienen los resultados anteriores.'); process.exit(0); }
+async function main() {
+  const env = loadEnv();
+  const KEY = env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY;
+  if (!KEY) { console.warn('⚠️  Falta FOOTBALL_API_KEY; se mantienen los resultados anteriores.'); process.exitCode = 3; return; }
 
-let res;
-try {
-  res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', { headers: { 'X-Auth-Token': KEY } });
-} catch (e) { console.warn('⚠️  Sin conexión con la API (' + e.message + '); se mantienen los resultados anteriores.'); process.exit(0); }
-if (!res.ok) { console.warn('⚠️  API HTTP ' + res.status + ' — se mantienen los resultados anteriores.'); process.exit(0); }
-const data = await res.json();
-const matches = data.matches || [];
+  let res;
+  try {
+    res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', { headers: { 'X-Auth-Token': KEY } });
+  } catch (e) { console.warn('⚠️  Sin conexión con la API (' + e.message + '); se mantienen los resultados anteriores.'); process.exitCode = 3; return; }
+  if (!res.ok) { console.warn('⚠️  API HTTP ' + res.status + ' — se mantienen los resultados anteriores.'); process.exitCode = 3; return; }
+  const data = await res.json();
+  const matches = data.matches || [];
 
-const byPair = {};
-const unmapped = new Set();
-let withScore = 0, live = 0;
-for (const m of matches) {
-  const a = resolve(m.homeTeam?.name), b = resolve(m.awayTeam?.name);
-  if (!a) unmapped.add(m.homeTeam?.name);
-  if (!b) unmapped.add(m.awayTeam?.name);
-  if (!a || !b) continue;
-  const key = [a, b].sort().join('-');
-  const hs = m.score?.fullTime?.home, as = m.score?.fullTime?.away;
-  const hasScore = hs !== null && hs !== undefined && as !== null && as !== undefined;
-  const entry = { status: m.status, utc: m.utcDate };
-  if (hasScore) { entry.scores = { [a]: hs, [b]: as }; withScore++; }
-  if (['IN_PLAY', 'PAUSED'].includes(m.status)) { entry.live = true; live++; }
-  byPair[key] = entry;
+  const byPair = {};
+  const unmapped = new Set();
+  let withScore = 0, live = 0;
+  for (const m of matches) {
+    const a = resolve(m.homeTeam?.name), b = resolve(m.awayTeam?.name);
+    if (!a) unmapped.add(m.homeTeam?.name);
+    if (!b) unmapped.add(m.awayTeam?.name);
+    if (!a || !b) continue;
+    const key = [a, b].sort().join('-');
+    const hs = m.score?.fullTime?.home, as = m.score?.fullTime?.away;
+    const hasScore = hs !== null && hs !== undefined && as !== null && as !== undefined;
+    const entry = { status: m.status, utc: m.utcDate };
+    if (hasScore) { entry.scores = { [a]: hs, [b]: as }; withScore++; }
+    if (['IN_PLAY', 'PAUSED'].includes(m.status)) { entry.live = true; live++; }
+    byPair[key] = entry;
+  }
+
+  const outPath = join(root, 'src', 'data', 'results.json');
+  let oldByPair = '';
+  try { oldByPair = JSON.stringify(JSON.parse(readFileSync(outPath, 'utf8')).byPair || {}); } catch {}
+  const newByPair = JSON.stringify(byPair);
+  if (newByPair === oldByPair) {
+    console.log(`= Sin cambios reales (${withScore} con marcador, ${live} en juego). No se reescribe ni redespliega.`);
+    process.exitCode = 3;
+    return;
+  }
+  writeFileSync(outPath, JSON.stringify({ updatedAt: new Date().toISOString(), source: 'football-data.org', byPair }, null, 0));
+  console.log(`✅ Resultados ACTUALIZADOS: ${Object.keys(byPair).length} partidos · ${withScore} con marcador · ${live} en juego.`);
+  if (unmapped.size) console.log('⚠️  Sin mapear:', [...unmapped].join(', '));
+  else console.log('✅ Todos los equipos mapeados correctamente.');
 }
 
-const out = { updatedAt: new Date().toISOString(), source: 'football-data.org', byPair };
-writeFileSync(join(root, 'src', 'data', 'results.json'), JSON.stringify(out, null, 0));
-
-console.log(`✅ Resultados guardados: ${Object.keys(byPair).length} partidos mapeados · ${withScore} con marcador · ${live} en juego.`);
-if (unmapped.size) console.log('⚠️  Sin mapear:', [...unmapped].join(', '));
-else console.log('✅ Todos los equipos mapeados correctamente.');
+main();

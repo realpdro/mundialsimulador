@@ -1,6 +1,6 @@
 ---
 import { teamName, flagUrl, type Lang } from '../data/tournament';
-import { spainTime, overnightNote } from '../lib/site';
+import { spainTime, overnightNote, teamUrl } from '../lib/site';
 import { UI } from '../i18n/ui';
 
 interface Result { status: string; utc?: string; scores?: Record<string, number>; live?: boolean; }
@@ -38,8 +38,12 @@ const note = overnightNote(koSpain, lang);
         : <span class="cm-time">{spainTime(koSpain)}h {koLocal && <small>({koLocal} {ui.common.localTime})</small>}</span>}
   </div>
   <div class="cm-teams">
-    <div class={winA ? 'cm-team win' : 'cm-team'}>{a && <img class="flag" loading="lazy" src={flagUrl(a)} alt="" />}<span class="tname">{a ? teamName(a, lang) : ui.common.tbd}</span>{hasScore && <b class="cm-score">{sa}</b>}</div>
-    <div class={winB ? 'cm-team win' : 'cm-team'}>{b && <img class="flag" loading="lazy" src={flagUrl(b)} alt="" />}<span class="tname">{b ? teamName(b, lang) : ui.common.tbd}</span>{hasScore && <b class="cm-score">{sb}</b>}</div>
+    {a
+      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{teamName(a, lang)}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
+      : <div class="cm-team"><span class="tname">{ui.common.tbd}</span></div>}
+    {b
+      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{teamName(b, lang)}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
+      : <div class="cm-team"><span class="tname">{ui.common.tbd}</span></div>}
   </div>
   {(stadium || city) && <div class="cm-venue">📍 {stadium}{stadium && city ? ', ' : ''}{city}</div>}
   {note && !hasScore && !r?.live && <div class="cm-note">{note}</div>}

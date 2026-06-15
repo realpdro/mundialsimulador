@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LANGS, type Lang } from '../../data/tournament';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+
+const C = {
+  es: {
+    title: 'Sobre el proyecto y metodología · Simulador Mundial 2026',
+    desc: 'Qué es el Simulador Mundial 2026, de dónde salen los datos (resultados reales y sorteo oficial de la FIFA) y cómo se calcula todo.',
+    h1: 'Sobre el proyecto y metodología',
+    body: [
+      ['¿Qué es?', 'El Simulador Mundial 2026 es un proyecto independiente, no oficial y gratuito hecho por aficionados al fútbol. Te deja predecir cómo terminará el Mundial 2026 —grupos, eliminatorias y campeón— con el cuadro oficial de la FIFA, y a la vez consultar los resultados reales y la clasificación en vivo.'],
+      ['Cómo funciona el simulador', 'Eliges el resultado de cada partido de la fase de grupos y el orden de clasificación. A partir de ahí calculamos las tablas (puntos, diferencia de goles, goles a favor) y montamos las eliminatorias siguiendo el cuadro oficial de la FIFA, incluida la asignación de los 8 mejores terceros según la tabla del Anexo C del reglamento oficial.'],
+      ['Resultados reales y clasificación en vivo', 'Los marcadores reales y las clasificaciones se actualizan automáticamente cada ~15 minutos a partir de una API de datos deportivos (football-data.org). Los partidos ya jugados aparecen bloqueados con su resultado real; tú solo predices lo que falta.'],
+      ['Datos y fuentes', 'Grupos, selecciones, sedes, fechas y horarios proceden del sorteo final y el calendario oficial de la FIFA (sorteo del 5 de diciembre de 2025). Los resultados en directo proceden de football-data.org. Las horas se muestran en hora peninsular de España. Las banderas pueden proceder de servicios de terceros.'],
+      ['Aviso', 'Esta web NO es oficial. No estamos afiliados a la FIFA ni a ninguna federación. Hacemos lo posible por la exactitud de los datos, pero pueden contener errores o retrasos; no tomes decisiones (apuestas, etc.) basándote en ellos.'],
+      ['Contacto', '¿Has visto un error o tienes una sugerencia? Nos encanta el feedback de otros aficionados.'],
+    ],
+  },
+  en: {
+    title: 'About & methodology · 2026 World Cup Simulator',
+    desc: 'What the 2026 World Cup Simulator is, where the data comes from (real results and the official FIFA draw) and how everything is calculated.',
+    h1: 'About & methodology',
+    body: [
+      ['What is it?', 'The 2026 World Cup Simulator is an independent, unofficial, free project made by football fans. It lets you predict how the 2026 World Cup will end —groups, knockouts and champion— using the official FIFA bracket, while also showing real results and live standings.'],
+      ['How the simulator works', 'You choose the result of each group match and the final group order. From there we compute the standings (points, goal difference, goals for) and build the knockouts following the official FIFA bracket, including the allocation of the 8 best third-placed teams per Annex C of the official regulations.'],
+      ['Real results & live standings', 'Real scores and standings update automatically about every 15 minutes from a sports-data API (football-data.org). Matches already played are locked with their real result; you only predict the rest.'],
+      ['Data & sources', 'Groups, teams, venues, dates and kick-off times come from the official FIFA final draw and schedule (draw of 5 December 2025). Live results come from football-data.org. Times are shown in Spain time (CEST). Flags may come from third-party services.'],
+      ['Disclaimer', 'This is NOT an official site. We are not affiliated with FIFA or any federation. We do our best for accuracy, but data may contain errors or delays; do not make decisions (betting, etc.) based on it.'],
+      ['Contact', 'Spotted an error or have a suggestion? We love feedback from fellow fans.'],
+    ],
+  },
+  pt: {
+    title: 'Sobre o projeto e metodologia · Simulador Copa 2026',
+    desc: 'O que é o Simulador da Copa 2026, de onde vêm os dados (resultados reais e sorteio oficial da FIFA) e como tudo é calculado.',
+    h1: 'Sobre o projeto e metodologia',
+    body: [
+      ['O que é?', 'O Simulador da Copa 2026 é um projeto independente, não oficial e gratuito feito por torcedores. Permite prever como a Copa 2026 vai terminar —grupos, mata-mata e campeão— com o chaveamento oficial da FIFA, e também ver os resultados reais e a classificação ao vivo.'],
+      ['Como funciona o simulador', 'Você escolhe o resultado de cada jogo da fase de grupos e a ordem de classificação. A partir daí calculamos as tabelas (pontos, saldo de gols, gols pró) e montamos o mata-mata seguindo o chaveamento oficial da FIFA, incluindo a alocação dos 8 melhores terceiros conforme o Anexo C do regulamento oficial.'],
+      ['Resultados reais e classificação ao vivo', 'Os placares reais e as classificações se atualizam automaticamente a cada ~15 minutos a partir de uma API de dados esportivos (football-data.org). Os jogos já disputados aparecem bloqueados com o resultado real; você só prevê o que falta.'],
+      ['Dados e fontes', 'Grupos, seleções, sedes, datas e horários vêm do sorteio final e calendário oficial da FIFA (sorteio de 5 de dezembro de 2025). Os resultados ao vivo vêm de football-data.org. Os horários são exibidos no horário da Espanha (CEST). As bandeiras podem vir de serviços de terceiros.'],
+      ['Aviso', 'Este site NÃO é oficial. Não temos vínculo com a FIFA nem com nenhuma federação. Fazemos o possível pela exatidão, mas os dados podem ter erros ou atrasos; não tome decisões (apostas, etc.) com base neles.'],
+      ['Contato', 'Encontrou um erro ou tem uma sugestão? Adoramos o feedback de outros torcedores.'],
+    ],
+  },
+}[lang];
+---
+<Base lang={lang} title={C.title} description={C.desc} path="sobre/">
+  <div class="page-head"><h1>{C.h1}</h1></div>
+  <div class="prose">
+    {C.body.map(([h, p]) => (<><h2>{h}</h2><p>{p}</p></>))}
+  </div>
+</Base>

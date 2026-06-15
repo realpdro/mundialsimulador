@@ -20,8 +20,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Descargar resultados, construir y desplegar
-        run: npm run deploy
+      - name: Descargar resultados, construir y desplegar (solo si cambian)
+        run: npm run deploy:ci
         env:
           FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
           FTP_HOST: ${{ secrets.FTP_HOST }}

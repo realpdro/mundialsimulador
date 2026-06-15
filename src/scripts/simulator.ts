@@ -319,17 +319,36 @@ function init(el: HTMLElement) {
   // ---- share ----
   const b64enc = (s: string) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const b64dec = (b: string) => { b = b.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; return decodeURIComponent(escape(atob(b))); };
-  const shareLink = () => location.origin + location.pathname + '#s=' + b64enc(JSON.stringify(state));
+  const shareText = { es: 'Mi predicción del Mundial 2026 🏆 ¿Aciertas el campeón?', en: 'My 2026 World Cup prediction 🏆 Can you call the champion?', pt: 'Minha previsão da Copa 2026 🏆 Você acerta o campeão?' }[lang];
+  const shareState = () => '#s=' + b64enc(JSON.stringify(state));
+  const shareClean = () => location.origin + location.pathname + shareState();
+  const shareUrl = (ch: string) => location.origin + location.pathname + '?utm_source=' + ch + '&utm_medium=share' + shareState();
   const modalBg = $('#modalBg');
   const openModal = (h: string) => { $('#modalBody').innerHTML = h; modalBg.classList.add('show'); };
   const closeModal = () => modalBg.classList.remove('show');
   $('#modalX').addEventListener('click', closeModal);
   modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
   $('#btnShare').addEventListener('click', () => {
-    const url = shareLink();
-    openModal(`<h3>${ui.sim.shareTitle}</h3><p>${ui.sim.shareDesc}</p><div class="linkbox"><input id="shareUrl" readonly value="${url}"><button class="btn primary" id="copyBtn">${ui.sim.copy}</button></div><div class="mrow"><button class="btn" id="imgBtn">${ui.sim.downloadImg}</button></div>`);
-    $('#copyBtn').addEventListener('click', () => copyText(url));
+    const clean = shareClean();
+    const nativeBtn = (navigator as any).share ? `<button class="sbtn nat" data-sh="native">📲 ${ui.sim.share.replace(/^[^ ]+ /, '')}</button>` : '';
+    openModal(`<h3>${ui.sim.shareTitle}</h3><p>${ui.sim.shareDesc}</p>
+      <div class="sharebtns"><button class="sbtn wa" data-sh="whatsapp">WhatsApp</button><button class="sbtn tg" data-sh="telegram">Telegram</button><button class="sbtn x" data-sh="x">X</button><button class="sbtn fb" data-sh="facebook">Facebook</button>${nativeBtn}</div>
+      <div class="linkbox"><input id="shareUrl" readonly value="${clean}"><button class="btn primary" id="copyBtn">${ui.sim.copy}</button></div>
+      <div class="mrow"><button class="btn" id="imgBtn">${ui.sim.downloadImg}</button></div>`);
+    $('#copyBtn').addEventListener('click', () => copyText(clean));
     $('#imgBtn').addEventListener('click', () => { $('#imgBtn').textContent = ui.sim.generating; downloadImage().finally(() => { $('#imgBtn').textContent = ui.sim.downloadImg; }); });
+    el.querySelectorAll<HTMLElement>('.sbtn').forEach((btn) => btn.addEventListener('click', () => {
+      const ch = btn.dataset.sh!;
+      if (ch === 'native' && (navigator as any).share) { (navigator as any).share({ title: ui.brand.title, text: shareText, url: shareUrl('native') }).catch(() => {}); return; }
+      const u = shareUrl(ch);
+      const intents: Record<string, string> = {
+        whatsapp: 'https://wa.me/?text=' + encodeURIComponent(shareText + ' ' + u),
+        telegram: 'https://t.me/share/url?url=' + encodeURIComponent(u) + '&text=' + encodeURIComponent(shareText),
+        x: 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(u),
+        facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u),
+      };
+      if (intents[ch]) window.open(intents[ch], '_blank', 'noopener,noreferrer');
+    }));
     setTimeout(() => { const i = el.querySelector<HTMLInputElement>('#shareUrl'); if (i) { i.focus(); i.select(); } }, 50);
   });
   function copyText(t: string) {
