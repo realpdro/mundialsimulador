@@ -320,6 +320,11 @@ function init(el: HTMLElement) {
   const b64enc = (s: string) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const b64dec = (b: string) => { b = b.replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '='; return decodeURIComponent(escape(atob(b))); };
   const shareText = { es: 'Mi predicción del Mundial 2026 🏆 ¿Aciertas el campeón?', en: 'My 2026 World Cup prediction 🏆 Can you call the champion?', pt: 'Minha previsão da Copa 2026 🏆 Você acerta o campeão?' }[lang];
+  const RETO = {
+    es: { btn: '🤜 Reta a un amigo', text: 'Te reto: ¿aciertas el Mundial 2026 mejor que yo? 🏆 Mira mi quiniela y haz la tuya', banner: 'Un amigo te reta', theirChamp: 'su campeón', compare: 'Comparar', need: 'Elige tu campeón antes de retar', complete: 'Completa tu quiniela para poder comparar', vsTitle: 'Tu quiniela vs la de tu amigo', match: 'Coincidencia', you: 'Tú', friend: 'Tu amigo', winnersL: 'Ganadores de grupo iguales', finalistsL: 'Finalistas en común' },
+    en: { btn: '🤜 Challenge a friend', text: 'I challenge you: can you predict the 2026 World Cup better than me? 🏆 See my bracket and make yours', banner: 'A friend challenges you', theirChamp: 'their champion', compare: 'Compare', need: 'Pick your champion before challenging', complete: 'Complete your bracket to compare', vsTitle: "Your bracket vs your friend's", match: 'Match', you: 'You', friend: 'Friend', winnersL: 'Same group winners', finalistsL: 'Finalists in common' },
+    pt: { btn: '🤜 Desafie um amigo', text: 'Te desafio: você acerta a Copa 2026 melhor que eu? 🏆 Veja meu palpite e faça o seu', banner: 'Um amigo te desafia', theirChamp: 'o campeão dele', compare: 'Comparar', need: 'Escolha seu campeão antes de desafiar', complete: 'Complete seu palpite para comparar', vsTitle: 'Seu palpite vs o do seu amigo', match: 'Coincidência', you: 'Você', friend: 'Amigo', winnersL: 'Campeões de grupo iguais', finalistsL: 'Finalistas em comum' },
+  }[lang];
   const shareState = () => '#s=' + b64enc(JSON.stringify(state));
   const shareClean = () => location.origin + location.pathname + shareState();
   const shareUrl = (ch: string) => location.origin + location.pathname + '?utm_source=' + ch + '&utm_medium=share' + shareState();
@@ -334,9 +339,11 @@ function init(el: HTMLElement) {
     openModal(`<h3>${ui.sim.shareTitle}</h3><p>${ui.sim.shareDesc}</p>
       <div class="sharebtns"><button class="sbtn wa" data-sh="whatsapp">WhatsApp</button><button class="sbtn tg" data-sh="telegram">Telegram</button><button class="sbtn x" data-sh="x">X</button><button class="sbtn fb" data-sh="facebook">Facebook</button>${nativeBtn}</div>
       <div class="linkbox"><input id="shareUrl" readonly value="${clean}"><button class="btn primary" id="copyBtn">${ui.sim.copy}</button></div>
-      <div class="mrow"><button class="btn" id="imgBtn">${ui.sim.downloadImg}</button></div>`);
+      <div class="mrow"><button class="btn" id="imgBtn">${ui.sim.downloadImg}</button></div>
+      <div class="mrow"><button class="btn" id="retoBtn" style="border-color:#22c55e66;color:var(--green);font-weight:700">${RETO.btn}</button></div>`);
     $('#copyBtn').addEventListener('click', () => copyText(clean));
     $('#imgBtn').addEventListener('click', () => { $('#imgBtn').textContent = ui.sim.generating; downloadImage().finally(() => { $('#imgBtn').textContent = ui.sim.downloadImg; }); });
+    $('#retoBtn').addEventListener('click', openReto);
     el.querySelectorAll<HTMLElement>('.sbtn').forEach((btn) => btn.addEventListener('click', () => {
       const ch = btn.dataset.sh!;
       if (ch === 'native' && (navigator as any).share) { (navigator as any).share({ title: ui.brand.title, text: shareText, url: shareUrl('native') }).catch(() => {}); return; }
@@ -393,10 +400,84 @@ function init(el: HTMLElement) {
   let toastT: any;
   function toast(msg: string) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2200); }
 
+  // ---- reta a un amigo ----
+  // Calcula los resultados (campeón, finalistas, ganadores de grupo) de un estado cualquiera
+  // intercambiando temporalmente el `state` global (computeAll/winnerOf leen de él) y restaurándolo.
+  function outcomesOf(st: any) {
+    const saved = state; state = st;
+    try {
+      const c = computeAll();
+      return {
+        champ: winnerOf(104, c) as string | null,
+        finalists: [resolve(FN[0].a, c), resolve(FN[0].b, c)] as (string | null)[],
+        winners: LETTERS.map((L) => (c.gr[L]?.order?.[0] ?? null) as string | null),
+      };
+    } catch { return { champ: null as string | null, finalists: [null, null] as (string | null)[], winners: [] as (string | null)[] }; }
+    finally { state = saved; }
+  }
+  function openReto() {
+    if (!outcomesOf(state).champ) { toast(RETO.need); return; }
+    const base = location.origin + location.pathname + '?reto=' + b64enc(JSON.stringify(state));
+    openModal(`<h3>${RETO.btn}</h3><p>${RETO.text}</p>
+      <div class="sharebtns"><button class="sbtn wa" data-rsh="whatsapp">WhatsApp</button><button class="sbtn tg" data-rsh="telegram">Telegram</button><button class="sbtn x" data-rsh="x">X</button></div>
+      <div class="linkbox"><input id="shareUrl" readonly value="${base}"><button class="btn primary" id="retoCopy">${ui.sim.copy}</button></div>`);
+    $('#retoCopy').addEventListener('click', () => copyText(base));
+    el.querySelectorAll<HTMLElement>('[data-rsh]').forEach((btn) => btn.addEventListener('click', () => {
+      const ch = btn.dataset.rsh!; const uu = base + '&utm_source=' + ch + '&utm_medium=reto';
+      const intents: Record<string, string> = {
+        whatsapp: 'https://wa.me/?text=' + encodeURIComponent(RETO.text + ' ' + uu),
+        telegram: 'https://t.me/share/url?url=' + encodeURIComponent(uu) + '&text=' + encodeURIComponent(RETO.text),
+        x: 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(RETO.text) + '&url=' + encodeURIComponent(uu),
+      };
+      if (intents[ch]) window.open(intents[ch], '_blank', 'noopener,noreferrer');
+    }));
+    setTimeout(() => { const i = el.querySelector<HTMLInputElement>('#shareUrl'); if (i) { i.focus(); i.select(); } }, 50);
+  }
+  function showCompare(rv: any) {
+    const me = outcomesOf(state); if (!me.champ) { toast(RETO.complete); return; }
+    const ri = outcomesOf(rv);
+    const winShared = me.winners.filter((c, i) => c && c === ri.winners[i]).length;
+    const finShared = me.finalists.filter((c) => c && ri.finalists.includes(c)).length;
+    const sameChamp = !!(me.champ && me.champ === ri.champ);
+    const pct = Math.round(((sameChamp ? 3 : 0) + winShared + finShared) / 17 * 100);
+    openModal(`<h3>${RETO.vsTitle}</h3>
+      <div style="text-align:center;font-size:15px;margin:2px 0 14px">${RETO.match}: <b style="color:var(--accent);font-size:22px">${pct}%</b></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px">
+        <div style="text-align:center;flex:1"><div style="font-size:12px;color:var(--muted2);margin-bottom:4px">${RETO.you}</div><div style="font-weight:800">${flag(me.champ, true)} ${tname(me.champ)}</div></div>
+        <div style="font-size:24px;color:${sameChamp ? 'var(--green)' : 'var(--muted2)'}">${sameChamp ? '=' : '≠'}</div>
+        <div style="text-align:center;flex:1"><div style="font-size:12px;color:var(--muted2);margin-bottom:4px">${RETO.friend}</div><div style="font-weight:800">${ri.champ ? flag(ri.champ, true) + ' ' + tname(ri.champ) : '—'}</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 13px;background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px"><span>${RETO.winnersL}</span><b>${winShared}/12</b></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 13px;background:var(--card);border:1px solid var(--line);border-radius:10px"><span>${RETO.finalistsL}</span><b>${finShared}/2</b></div>`);
+  }
+  function showRetoBanner(rv: any) {
+    const champ = outcomesOf(rv).champ;
+    const champHtml = champ ? `${flag(champ)} <b>${tname(champ)}</b>` : '—';
+    const banner = mkEl(`<div class="retobanner" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:linear-gradient(90deg,rgba(34,197,94,.13),rgba(56,189,248,.13));border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:14px">
+      <span style="flex:1;min-width:150px">🤜 <b>${RETO.banner}</b> · ${RETO.theirChamp}: ${champHtml}</span>
+      <button class="btn primary" id="retoCmp">${RETO.compare}</button>
+      <button id="retoX" aria-label="x" style="background:none;border:0;color:var(--muted2);font-size:18px;cursor:pointer;line-height:1;padding:0 4px">✕</button></div>`);
+    el.prepend(banner);
+    banner.querySelector('#retoCmp')!.addEventListener('click', () => showCompare(rv));
+    banner.querySelector('#retoX')!.addEventListener('click', () => { try { localStorage.removeItem('wc26_reto'); } catch {} banner.remove(); });
+  }
+  function initReto() {
+    let rival: any = null;
+    const retoParam = new URLSearchParams(location.search).get('reto');
+    if (retoParam) {
+      try { rival = migrate(JSON.parse(b64dec(retoParam))); localStorage.setItem('wc26_reto', JSON.stringify(rival)); } catch {}
+      history.replaceState(null, '', location.pathname);
+    } else {
+      try { const r = localStorage.getItem('wc26_reto'); if (r) rival = JSON.parse(r); } catch {}
+    }
+    if (rival) showRetoBanner(rival);
+  }
+
   // ---- init ----
   if (location.hash.startsWith('#s=')) {
     try { state = migrate(JSON.parse(b64dec(location.hash.slice(3)))); save(); } catch {}
     history.replaceState(null, '', location.pathname);
   }
   buildGroups(); updateProgress();
+  initReto();
 }
