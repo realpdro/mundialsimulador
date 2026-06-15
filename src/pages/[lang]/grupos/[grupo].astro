@@ -29,20 +29,34 @@ const jsonLd = {
   name: ui.group.h1(L), sport: 'Soccer', startDate: fixtures[0]?.date, endDate: fixtures[fixtures.length - 1]?.date,
   url: `${site}/${lang}/grupos/${L.toLowerCase()}/`,
 };
+const itemList = {
+  '@context': 'https://schema.org', '@type': 'ItemList', name: ui.group.h1(L),
+  itemListElement: standings.order.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: teamName(s.code, lang) })),
+};
+const jsonLdAll = standings.played > 0 ? [jsonLd, itemList] : jsonLd;
+const updatedAt = (RESULTS as any).updatedAt
+  ? new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
+  : null;
+const LIVE = {
+  es: { suffix: ' · en directo', badge: 'Clasificación en directo · actualizada', tz: 'hora España' },
+  en: { suffix: ' · live', badge: 'Live standings · updated', tz: 'Spain time' },
+  pt: { suffix: ' · ao vivo', badge: 'Classificação ao vivo · atualizada', tz: 'horário Espanha' },
+}[lang];
 ---
 <Base
   lang={lang}
-  title={ui.meta.groupTitle(L)}
+  title={ui.meta.groupTitle(L) + (standings.played > 0 ? LIVE.suffix : '')}
   description={ui.group.intro(L, listTeams(teamNames, lang))}
   path={`grupos/${L.toLowerCase()}/`}
   active="groups"
-  jsonLd={jsonLd}
+  jsonLd={jsonLdAll}
 >
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › {ui.common.group} {L}</p>
   <div class="page-head">
     <h1>{ui.group.h1(L)}</h1>
     <p>{ui.group.intro(L, listTeams(teamNames, lang))}</p>
   </div>
+  {standings.played > 0 && updatedAt && <p class="cal-badge">🟢 {LIVE.badge} {updatedAt}h · {LIVE.tz}</p>}
 
   <h2 class="section-h">{ui.group.teamsLabel}</h2>
   <div class="team-grid">
