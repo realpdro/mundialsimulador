@@ -1,0 +1,46 @@
+---
+import { teamName, flagUrl, type Lang } from '../data/tournament';
+import { spainTime, overnightNote } from '../lib/site';
+import { UI } from '../i18n/ui';
+
+interface Result { status: string; utc?: string; scores?: Record<string, number>; live?: boolean; }
+interface Props {
+  lang: Lang;
+  label: string;
+  ko?: boolean;
+  koSpain: string | null;
+  koLocal?: string | null;
+  a: string | null;
+  b: string | null;
+  stadium?: string | null;
+  city?: string | null;
+  result?: Result | null;
+}
+const { lang, label, ko = false, koSpain, koLocal = null, a, b, stadium = null, city = null, result = null } = Astro.props;
+const ui = UI[lang];
+const FIN = { es: 'Final', en: 'Full-time', pt: 'Encerrado' }[lang];
+const LIVE = { es: '🔴 EN JUEGO', en: '🔴 LIVE', pt: '🔴 AO VIVO' }[lang];
+const r = result;
+const sa = r?.scores && a ? r.scores[a] : null;
+const sb = r?.scores && b ? r.scores[b] : null;
+const hasScore = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
+const winA = hasScore && (sa as number) > (sb as number);
+const winB = hasScore && (sb as number) > (sa as number);
+const note = overnightNote(koSpain, lang);
+---
+<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'}>
+  <div class="cm-top">
+    <span class={ko ? 'gtag ko' : 'gtag'}>{label}</span>
+    {r?.live
+      ? <span class="cm-stat live">{LIVE}</span>
+      : hasScore
+        ? <span class="cm-stat fin">{FIN}</span>
+        : <span class="cm-time">{spainTime(koSpain)}h {koLocal && <small>({koLocal} {ui.common.localTime})</small>}</span>}
+  </div>
+  <div class="cm-teams">
+    <div class={winA ? 'cm-team win' : 'cm-team'}>{a && <img class="flag" loading="lazy" src={flagUrl(a)} alt="" />}<span class="tname">{a ? teamName(a, lang) : ui.common.tbd}</span>{hasScore && <b class="cm-score">{sa}</b>}</div>
+    <div class={winB ? 'cm-team win' : 'cm-team'}>{b && <img class="flag" loading="lazy" src={flagUrl(b)} alt="" />}<span class="tname">{b ? teamName(b, lang) : ui.common.tbd}</span>{hasScore && <b class="cm-score">{sb}</b>}</div>
+  </div>
+  {(stadium || city) && <div class="cm-venue">📍 {stadium}{stadium && city ? ', ' : ''}{city}</div>}
+  {note && !hasScore && !r?.live && <div class="cm-note">{note}</div>}
+</div>

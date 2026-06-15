@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.dataredonda.com)",
+      "WebSearch",
+      "WebFetch(domain:en.wikipedia.org)"
+    ]
+  }
+}

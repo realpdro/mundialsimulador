@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, follow">
+<meta http-equiv="refresh" content="6; url=/es/">
+<title>Acceso no disponible · Simulador Mundial 2026</title>
+<style>
+  :root{--bg:#0a0f1c;--card:#151e30;--line:#26344f;--txt:#e8eefb;--muted:#8a99b8;--green:#22c55e;--green2:#16a34a;--accent:#38bdf8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#16233e,#0a0f1c 55%);color:var(--txt);font-family:system-ui,'Segoe UI',Roboto,Arial,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px;text-align:center;-webkit-font-smoothing:antialiased}
+  .box{max-width:540px}
+  .crest{width:60px;height:60px;border-radius:16px;display:grid;place-items:center;font-size:30px;margin:0 auto 20px;background:linear-gradient(135deg,var(--green),var(--accent))}
+  .code{font-size:clamp(72px,16vw,110px);font-weight:800;letter-spacing:-.04em;line-height:1;background:linear-gradient(135deg,var(--green),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:24px;font-weight:800;margin:6px 0 10px}
+  p{color:var(--muted);font-size:15px;margin-bottom:26px;line-height:1.5}
+  a.btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;padding:12px 20px;border-radius:11px;background:linear-gradient(135deg,var(--green2),var(--green));color:#04210f;text-decoration:none;transition:.15s}
+  a.btn:hover{filter:brightness(1.07)}
+  .small{margin-top:18px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="crest">🏆</div>
+    <div class="code">403</div>
+    <h1 id="t">Este contenido no está disponible</h1>
+    <p id="d">No se puede acceder a este recurso. Te llevamos al simulador en unos segundos.</p>
+    <a class="btn" id="home" href="/es/">⚽ Ir ahora al simulador</a>
+    <div class="small" id="r">Redirigiendo…</div>
+  </div>
+  <script>
+    (function () {
+      var p = location.pathname;
+      var lang = p.indexOf('/en/') === 0 ? 'en' : p.indexOf('/pt/') === 0 ? 'pt' : 'es';
+      var S = {
+        es: { t: 'Este contenido no está disponible', d: 'No se puede acceder a este recurso. Te llevamos al simulador en unos segundos.', home: '⚽ Ir ahora al simulador', r: 'Redirigiendo…' },
+        en: { t: 'This content is not available', d: "You can't access this resource. We'll take you to the simulator in a few seconds.", home: '⚽ Go to the simulator now', r: 'Redirecting…' },
+        pt: { t: 'Este conteúdo não está disponível', d: 'Não é possível acessar este recurso. Vamos te levar ao simulador em alguns segundos.', home: '⚽ Ir agora ao simulador', r: 'Redirecionando…' }
+      }[lang];
+      document.documentElement.lang = lang;
+      var set = function (id, txt, href) { var e = document.getElementById(id); if (!e) return; e.textContent = txt; if (href) e.href = href; };
+      set('t', S.t); set('d', S.d); set('r', S.r);
+      set('home', S.home, '/' + lang + '/');
+      setTimeout(function () { location.href = '/' + lang + '/'; }, 6000);
+    })();
+  </script>
+</body>
+</html>

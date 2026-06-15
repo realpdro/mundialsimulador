@@ -1,0 +1,77 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE, teamName, flagUrl } from '../../data/tournament';
+import { UI } from '../../i18n/ui';
+import { formatDay, spainTime, roundName, overnightNote } from '../../lib/site';
+import RESULTS from '../../data/results.json';
+import MatchCard from '../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const LBL = { es: { fin: 'Final', live: '🔴 EN JUEGO', upd: 'Resultados reales · actualizado' }, en: { fin: 'Full-time', live: '🔴 LIVE', upd: 'Live results · updated' }, pt: { fin: 'Encerrado', live: '🔴 AO VIVO', upd: 'Resultados ao vivo · atualizado' } }[lang];
+const updatedAt = (RESULTS as any).updatedAt
+  ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
+  : null;
+
+interface Result { status: string; utc: string; scores?: Record<string, number>; live?: boolean; }
+interface Row {
+  koSpain: string | null; date: string; koLocal: string | null; stadium: string; city: string;
+  label: string; ko: boolean; a: string | null; b: string | null; result: Result | null;
+}
+const BYPAIR = (RESULTS as any).byPair as Record<string, Result>;
+const resultFor = (a: string | null, b: string | null): Result | null =>
+  a && b ? BYPAIR[[a, b].sort().join('-')] ?? null : null;
+const rows: Row[] = [];
+SCHEDULE.groupStage.forEach((m) => {
+  const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
+  rows.push({
+    koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
+    label: `${ui.common.group} ${m.group}`, ko: false, a, b, result: resultFor(a, b),
+  });
+});
+SCHEDULE.knockout.forEach((m) => rows.push({
+  koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
+  label: roundName(lang, m.round), ko: true, a: null, b: null, result: null,
+}));
+rows.sort((x, y) => (x.koSpain || x.date).localeCompare(y.koSpain || y.date));
+const byDay = new Map<string, Row[]>();
+for (const r of rows) { const d = (r.koSpain || r.date).slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(r); }
+const days = [...byDay.keys()].sort();
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'SportsEvent',
+  name: ui.cal.title, sport: 'Soccer', startDate: '2026-06-11', endDate: '2026-07-19',
+  location: [
+    { '@type': 'Country', name: 'Mexico' }, { '@type': 'Country', name: 'United States' }, { '@type': 'Country', name: 'Canada' },
+  ],
+  url: `${site}/${lang}/calendario/`,
+};
+---
+<Base lang={lang} title={ui.meta.calTitle} description={ui.meta.calDesc} path="calendario/" active="calendar" jsonLd={jsonLd}>
+  <div class="page-head">
+    <h1>{ui.cal.title}</h1>
+    <p>{ui.cal.intro}</p>
+  </div>
+  <p class="cal-badge">{ui.cal.badge(rows.length)}{updatedAt ? ` · ${LBL.upd} ${updatedAt}` : ''}</p>
+
+  {days.map((d) => {
+    const ms = byDay.get(d)!;
+    return (
+      <div class="cal-day">
+        <div class="cal-dhead">
+          <span class="dnum">{formatDay(d, lang)}</span>
+          <span class="dcount">{ms.length} {ms.length > 1 ? ui.cal.matchesOf : ui.cal.matchOf}</span>
+        </div>
+        <div class="cal-grid">
+          {ms.map((m) => (
+            <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} stadium={m.stadium} city={m.city} result={m.result} />
+          ))}
+        </div>
+      </div>
+    );
+  })}
+</Base>

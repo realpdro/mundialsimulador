@@ -1,0 +1,31 @@
+name: Resultados en vivo + deploy
+
+# Actualiza los resultados del Mundial y vuelve a publicar la web.
+on:
+  schedule:
+    - cron: '*/15 * * * *' # cada ~15 min (GitHub puede retrasarlo algo)
+  workflow_dispatch: {} # permite lanzarlo a mano desde la pestaña Actions
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Descargar resultados, construir y desplegar
+        run: npm run deploy
+        env:
+          FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: '21'
+          FTP_REMOTE_DIR: '.'

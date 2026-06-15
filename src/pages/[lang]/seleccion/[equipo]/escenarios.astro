@@ -1,0 +1,92 @@
+---
+import Base from '../../../../layouts/Base.astro';
+import { LANGS, type Lang, GROUPS, LETTERS, SLUG_TO_CODE, TEAMS, teamName, flagUrl } from '../../../../data/tournament';
+import { UI } from '../../../../i18n/ui';
+import { homeUrl, groupsUrl, groupUrl, teamUrl } from '../../../../lib/site';
+import { groupScenarios } from '../../../../lib/scenarios';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) =>
+    Object.values(TEAMS).map((t) => ({ params: { lang, equipo: t.slug } })),
+  );
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const s = ui.scenarios;
+const code = SLUG_TO_CODE[Astro.params.equipo as string];
+const team = TEAMS[code];
+const name = teamName(code, lang);
+const L = LETTERS.find((g) => GROUPS[g].includes(code))!;
+const sc = groupScenarios(L);
+
+const oppText = (opp: any) =>
+  opp.kind === '3' ? s.oppThird : opp.kind === '1' ? s.oppWinner(opp.group) : s.oppRunner(opp.group);
+const firstG = sc.first.opp.kind !== '3' ? sc.first.opp.group! : null;
+const secondG = sc.second.opp.kind !== '3' ? sc.second.opp.group! : null;
+const tg = sc.thirdWinnerGroups;
+const orWord = lang === 'en' ? ' or ' : lang === 'pt' ? ' ou ' : ' o ';
+const tgText = tg.length <= 1 ? tg.join('') : tg.slice(0, -1).join(', ') + orWord + tg[tg.length - 1];
+
+const ans1 = s.plays(sc.first.match, oppText(sc.first.opp));
+const ans2 = s.plays(sc.second.match, oppText(sc.second.opp));
+const ans3 = tg.length ? s.third(tgText) : s.oppThird;
+const ans4 = s.fourth;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    { '@type': 'Question', name: s.q1(name, L), acceptedAnswer: { '@type': 'Answer', text: ans1 } },
+    { '@type': 'Question', name: s.q2(name, L), acceptedAnswer: { '@type': 'Answer', text: ans2 } },
+    { '@type': 'Question', name: s.q3(name, L), acceptedAnswer: { '@type': 'Answer', text: ans3 } },
+    { '@type': 'Question', name: s.q4(name, L), acceptedAnswer: { '@type': 'Answer', text: ans4 } },
+  ],
+};
+---
+<Base
+  lang={lang}
+  title={s.metaTitle(name)}
+  description={s.metaDesc(name, L)}
+  path={`seleccion/${team.slug}/escenarios/`}
+  active="teams"
+  jsonLd={jsonLd}
+>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › <a href={teamUrl(lang, code)}>{name}</a></p>
+  <div class="page-head">
+    <h1><img class="flag lg" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {s.h1(name)}</h1>
+    <p>{s.intro(name, L)}</p>
+  </div>
+
+  <div class="scen">
+    <div class="scen-card p1">
+      <h2>{s.h2First(name, L)}</h2>
+      <p>{ans1}</p>
+      {firstG && (
+        <div class="cands"><span class="cands-l">{s.candidates}</span>{GROUPS[firstG].map((c) => (
+          <a class="cand" href={teamUrl(lang, c)}><img class="flag" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
+        ))}</div>
+      )}
+    </div>
+    <div class="scen-card p2">
+      <h2>{s.h2(name, L, s.pos2)}</h2>
+      <p>{ans2}</p>
+      {secondG && (
+        <div class="cands"><span class="cands-l">{s.candidates}</span>{GROUPS[secondG].map((c) => (
+          <a class="cand" href={teamUrl(lang, c)}><img class="flag" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
+        ))}</div>
+      )}
+    </div>
+    <div class="scen-card p3">
+      <h2>{s.h2(name, L, s.pos3)}</h2>
+      <p>{ans3}</p>
+    </div>
+    <div class="scen-card p4">
+      <h2>{s.h2(name, L, s.pos4)}</h2>
+      <p>{ans4}</p>
+    </div>
+  </div>
+
+  <p style="text-align:center;margin-top:28px">
+    <a class="btn primary lg" href={homeUrl(lang)}>{s.cta}</a>
+  </p>
+</Base>

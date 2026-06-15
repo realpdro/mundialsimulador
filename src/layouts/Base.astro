@@ -1,0 +1,91 @@
+---
+import '../styles/global.css';
+import { LANGS, type Lang } from '../data/tournament';
+import { UI } from '../i18n/ui';
+import { homeUrl, calUrl, groupsUrl } from '../lib/site';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  path?: string; // sub-path after the locale, e.g. '' | 'calendario/' | 'grupos/a/'
+  active?: 'home' | 'calendar' | 'groups' | 'teams';
+  ogImage?: string;
+  jsonLd?: object | object[];
+}
+const { lang, title, description, path = '', active, ogImage, jsonLd } = Astro.props;
+const ui = UI[lang];
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const canonical = `${site}/${lang}/${path}`;
+const ogImg = ogImage ?? `${site}/og.png`;
+const OG_LOCALE: Record<Lang, string> = { es: 'es_ES', en: 'en_US', pt: 'pt_BR' };
+const navLinks = [
+  { key: 'home', href: homeUrl(lang), label: ui.nav.home },
+  { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
+  { key: 'calendar', href: calUrl(lang), label: ui.nav.calendar },
+];
+---
+<!doctype html>
+<html lang={ui.htmlLang}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  {LANGS.map((l) => (
+    <link rel="alternate" hreflang={UI[l].htmlLang} href={`${site}/${l}/${path}`} />
+  ))}
+  <link rel="alternate" hreflang="x-default" href={`${site}/es/${path}`} />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content={ui.brand.title} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:image" content={ogImg} />
+  <meta property="og:locale" content={OG_LOCALE[lang]} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImg} />
+
+  <meta name="theme-color" content="#0a0f1c" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://flagcdn.com" crossorigin />
+  {jsonLd && (
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  )}
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-head">
+      <a class="logo" href={homeUrl(lang)}>
+        <span class="crest">🏆</span>
+        <span><b>{ui.brand.title}</b><span>{ui.brand.tagline}</span></span>
+      </a>
+      <nav class="site-nav">
+        {navLinks.map((n) => (
+          <a href={n.href} class={active === n.key ? 'active' : ''}>{n.label}</a>
+        ))}
+        <span class="langsw">
+          {LANGS.map((l) => (
+            <a href={`/${l}/${path}`} class={l === lang ? 'on' : ''} hreflang={UI[l].htmlLang}>{l}</a>
+          ))}
+        </span>
+      </nav>
+    </header>
+
+    <slot />
+
+    <footer class="site-foot">
+      <div class="flinks">
+        <a href={homeUrl(lang)}>{ui.nav.home}</a>
+        <a href={groupsUrl(lang)}>{ui.nav.groups}</a>
+        <a href={calUrl(lang)}>{ui.nav.calendar}</a>
+      </div>
+      {ui.footer.disclaimer}
+    </footer>
+  </div>
+</body>
+</html>

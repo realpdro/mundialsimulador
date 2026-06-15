@@ -1,0 +1,21 @@
+{
+  "name": "simulador-mundial-2026",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "og": "node scripts/make-og.mjs",
+    "deploy:test": "node scripts/deploy.mjs --test",
+    "results": "node scripts/fetch-results.mjs",
+    "deploy": "node scripts/fetch-results.mjs && astro build && node scripts/deploy.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.3.0",
+    "astro": "^5.7.0",
+    "basic-ftp": "^6.0.1",
+    "sharp": "^0.35.0"
+  }
+}

@@ -1,0 +1,75 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, SLUG_TO_CODE, TEAMS, teamName, flagUrl } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, groupsUrl, groupUrl, teamUrl, spainDateLabel, spainTime, overnightNote } from '../../../lib/site';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) =>
+    Object.values(TEAMS).map((t) => ({ params: { lang, equipo: t.slug } })),
+  );
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const code = SLUG_TO_CODE[Astro.params.equipo as string];
+const team = TEAMS[code];
+const name = teamName(code, lang);
+const L = LETTERS.find((g) => GROUPS[g].includes(code))!;
+const rivals = GROUPS[L].filter((c) => c !== code);
+const esName = team.names.es;
+const fixtures = SCHEDULE.groupStage
+  .filter((m) => m.teamA === esName || m.teamB === esName)
+  .sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'SportsTeam', name, sport: 'Soccer',
+  url: `${site}/${lang}/seleccion/${team.slug}/`,
+  logo: flagUrl(code, 160),
+};
+---
+<Base
+  lang={lang}
+  title={ui.meta.teamTitle(name)}
+  description={ui.team.intro(name, L)}
+  path={`seleccion/${team.slug}/`}
+  active="teams"
+  jsonLd={jsonLd}
+>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › {name}</p>
+  <div class="page-head">
+    <h1><img class="flag lg" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {ui.team.h1(name)}</h1>
+    <p>{ui.team.intro(name, L)}</p>
+  </div>
+
+  <div style="text-align:center;margin-bottom:8px">
+    <span class="fact">🏆 <b>{ui.common.group} {L}</b></span>
+    <span class="fact">📅 <b>{fixtures.length}</b> {ui.cal.matchesOf}</span>
+    <a class="fact" href={groupUrl(lang, L)} style="color:var(--accent)">→ {ui.common.group} {L}</a>
+  </div>
+  <p style="text-align:center;margin-bottom:20px"><a class="btn" href={`${teamUrl(lang, code)}escenarios/`}>{ui.scenarios.link(name)}</a></p>
+
+  <h2 class="section-h">{ui.team.fixtures}</h2>
+  <div class="cal-grid">
+    {fixtures.map((m) => {
+      const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+      const result = a && b ? (RESULTS as any).byPair[[a, b].sort().join('-')] ?? null : null;
+      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} />;
+    })}
+  </div>
+
+  <h2 class="section-h">{ui.team.rivals}</h2>
+  <div class="team-grid">
+    {rivals.map((c) => (
+      <a class="team-card" href={teamUrl(lang, c)}>
+        <img class="flag lg" loading="lazy" src={flagUrl(c)} alt="" /> {teamName(c, lang)}
+      </a>
+    ))}
+  </div>
+
+  <p style="text-align:center;margin-top:26px">
+    <a class="btn primary lg" href={homeUrl(lang)}>{ui.team.simulate}</a>
+  </p>
+</Base>

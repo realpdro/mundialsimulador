@@ -1,0 +1,6 @@
+# Páginas de error personalizadas
+ErrorDocument 404 /404.html
+ErrorDocument 403 /403.html
+
+# Evita el listado de directorios (y el 403 de Apache en carpetas sin índice)
+Options -Indexes

@@ -1,0 +1,88 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, TEAMS, teamName, flagUrl } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, groupsUrl, teamUrl, spainDateLabel, spainTime, overnightNote, listTeams } from '../../../lib/site';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+import { realStandings } from '../../../lib/standings';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) => LETTERS.map((L) => ({ params: { lang, grupo: L.toLowerCase() } })));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const L = (Astro.params.grupo as string).toUpperCase();
+const codes = GROUPS[L];
+const teamNames = codes.map((c) => teamName(c, lang));
+const fixtures = SCHEDULE.groupStage
+  .filter((m) => m.group === L)
+  .sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
+const standings = realStandings(L, (RESULTS as any).byPair);
+const ST = { es: 'Clasificación real', en: 'Live standings', pt: 'Classificação real' }[lang];
+const STN = { es: 'Calculada con los partidos ya jugados.', en: 'Based on matches played so far.', pt: 'Com base nos jogos já disputados.' }[lang];
+const TH = { es: 'Equipo', en: 'Team', pt: 'Seleção' }[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'SportsEvent',
+  name: ui.group.h1(L), sport: 'Soccer', startDate: fixtures[0]?.date, endDate: fixtures[fixtures.length - 1]?.date,
+  url: `${site}/${lang}/grupos/${L.toLowerCase()}/`,
+};
+---
+<Base
+  lang={lang}
+  title={ui.meta.groupTitle(L)}
+  description={ui.group.intro(L, listTeams(teamNames, lang))}
+  path={`grupos/${L.toLowerCase()}/`}
+  active="groups"
+  jsonLd={jsonLd}
+>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › {ui.common.group} {L}</p>
+  <div class="page-head">
+    <h1>{ui.group.h1(L)}</h1>
+    <p>{ui.group.intro(L, listTeams(teamNames, lang))}</p>
+  </div>
+
+  <h2 class="section-h">{ui.group.teamsLabel}</h2>
+  <div class="team-grid">
+    {codes.map((code) => (
+      <a class="team-card" href={teamUrl(lang, code)}>
+        <img class="flag lg" loading="lazy" src={flagUrl(code)} alt="" /> {teamName(code, lang)}
+      </a>
+    ))}
+  </div>
+
+  {standings.played > 0 && (
+    <>
+      <h2 class="section-h">{ST}</h2>
+      <p style="font-size:12.5px;color:var(--muted2);margin:-8px 2px 12px">{STN}</p>
+      <div style="background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:8px">
+        <table class="stand">
+          <thead><tr><th class="teamh">{TH}</th><th>{ui.common.pj}</th><th>{ui.common.w}</th><th>{ui.common.d}</th><th>{ui.common.l}</th><th>{ui.common.gd}</th><th>{ui.common.points}</th></tr></thead>
+          <tbody>
+            {standings.order.map((s, idx) => (
+              <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''}>
+                <td class="team"><div class="row"><span class="pos">{idx + 1}</span><img class="flag" loading="lazy" src={flagUrl(s.code)} alt="" /><span class="tname">{teamName(s.code, lang)}</span></div></td>
+                <td>{s.pj}</td><td>{s.g}</td><td>{s.e}</td><td>{s.p}</td><td>{s.dg > 0 ? '+' : ''}{s.dg}</td><td class="pts">{s.pts}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )}
+
+  <h2 class="section-h">{ui.group.fixtures}</h2>
+  <div class="cal-grid">
+    {fixtures.map((m) => {
+      const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+      const result = a && b ? (RESULTS as any).byPair[[a, b].sort().join('-')] ?? null : null;
+      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} />;
+    })}
+  </div>
+
+  <p style="text-align:center;margin-top:26px">
+    <a class="btn primary lg" href={homeUrl(lang)}>{ui.group.simulate}</a>
+  </p>
+</Base>

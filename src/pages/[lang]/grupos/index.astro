@@ -1,0 +1,30 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, GROUPS, LETTERS, teamName, flagUrl } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { groupUrl, teamUrl } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+---
+<Base lang={lang} title={ui.meta.groupsTitle} description={ui.meta.groupsDesc} path="grupos/" active="groups">
+  <div class="page-head">
+    <h1>{ui.groups.title}</h1>
+    <p>{ui.groups.intro}</p>
+  </div>
+  <div class="tile-grid">
+    {LETTERS.map((L) => (
+      <div class="tile">
+        <a class="tl-head" href={groupUrl(lang, L)}><span class="tag">{L}</span> {ui.common.group} {L}</a>
+        {GROUPS[L].map((code) => (
+          <a class="tl-team" href={teamUrl(lang, code)}>
+            <img class="flag" loading="lazy" src={flagUrl(code)} alt="" /> {teamName(code, lang)}
+          </a>
+        ))}
+      </div>
+    ))}
+  </div>
+</Base>
