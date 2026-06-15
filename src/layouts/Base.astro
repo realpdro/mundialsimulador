@@ -12,13 +12,24 @@ interface Props {
   active?: 'home' | 'calendar' | 'groups' | 'teams' | 'scorers';
   ogImage?: string;
   jsonLd?: object | object[];
+  breadcrumbs?: { name: string; url: string }[];
 }
-const { lang, title, description, path = '', active, ogImage, jsonLd } = Astro.props;
+const { lang, title, description, path = '', active, ogImage, jsonLd, breadcrumbs } = Astro.props;
 const ui = UI[lang];
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
 const canonical = `${site}/${lang}/${path}`;
 const ogImg = ogImage ?? `${site}/og.png`;
 const OG_LOCALE: Record<Lang, string> = { es: 'es_ES', en: 'en_US', pt: 'pt_BR' };
+const orgJsonLd = [
+  { '@context': 'https://schema.org', '@type': 'Organization', name: ui.brand.title, url: `${site}/${lang}/`, logo: `${site}/og.png` },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: ui.brand.title, url: `${site}/`, inLanguage: ui.htmlLang },
+];
+const crumbJsonLd = breadcrumbs && breadcrumbs.length
+  ? {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.url.startsWith('http') ? c.url : `${site}${c.url}` })),
+    }
+  : null;
 const navLinks = [
   { key: 'home', href: homeUrl(lang), label: ui.nav.home },
   { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
@@ -56,6 +67,10 @@ const navLinks = [
   <link rel="preconnect" href="https://flagcdn.com" crossorigin />
   {jsonLd && (
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  )}
+  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  {crumbJsonLd && (
+    <script type="application/ld+json" set:html={JSON.stringify(crumbJsonLd)} />
   )}
 </head>
 <body>

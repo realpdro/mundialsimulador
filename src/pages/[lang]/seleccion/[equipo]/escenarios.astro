@@ -50,6 +50,7 @@ const jsonLd = {
   path={`seleccion/${team.slug}/escenarios/`}
   active="teams"
   jsonLd={jsonLd}
+  breadcrumbs={[{ name: ui.nav.home, url: homeUrl(lang) }, { name: ui.nav.groups, url: groupsUrl(lang) }, { name: `${ui.common.group} ${L}`, url: groupUrl(lang, L) }, { name, url: teamUrl(lang, code) }]}
 >
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › <a href={teamUrl(lang, code)}>{name}</a></p>
   <div class="page-head">

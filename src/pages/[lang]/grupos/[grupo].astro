@@ -50,6 +50,7 @@ const LIVE = {
   path={`grupos/${L.toLowerCase()}/`}
   active="groups"
   jsonLd={jsonLdAll}
+  breadcrumbs={[{ name: ui.nav.home, url: homeUrl(lang) }, { name: ui.nav.groups, url: groupsUrl(lang) }, { name: `${ui.common.group} ${L}`, url: `/${lang}/grupos/${L.toLowerCase()}/` }]}
 >
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › {ui.common.group} {L}</p>
   <div class="page-head">
