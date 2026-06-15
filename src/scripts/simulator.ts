@@ -3,6 +3,22 @@ import {
   THIRD_SLOTS, THIRD_TABLE, type Lang,
 } from '../data/tournament';
 import { UI } from '../i18n/ui';
+import RESULTS from '../data/results.json';
+
+// Resultados REALES de partidos de grupo, indexados por "L-i" (i = índice de PAIRS), orientados local/visitante.
+const REAL: Record<string, { sa: number; sb: number; live: boolean }> = {};
+{
+  const bp: any = (RESULTS as any).byPair || {};
+  for (const L of LETTERS) {
+    PAIRS.forEach((p, i) => {
+      const home = GROUPS[L][p[0]], away = GROUPS[L][p[1]];
+      const r = bp[[home, away].sort().join('-')];
+      if (r && r.scores && (r.status === 'FINISHED' || r.live)) {
+        REAL[L + '-' + i] = { sa: r.scores[home], sb: r.scores[away], live: !!r.live };
+      }
+    });
+  }
+}
 
 type Side = 'a' | 'b';
 interface Score { sa: string; sb: string; }
@@ -15,6 +31,7 @@ if (root) init(root);
 function init(el: HTMLElement) {
   const lang = (el.dataset.lang as Lang) || 'es';
   const ui = UI[lang];
+  const realNote = { es: 'Los partidos ya jugados muestran el resultado REAL (no editable). Tú predices el resto y la clasificación se actualiza al momento.', en: 'Played matches show the REAL result (locked). You predict the rest and the table updates live.', pt: 'Os jogos já disputados mostram o resultado REAL (bloqueado). Você prevê o resto e a tabela atualiza na hora.' }[lang];
   const LS_KEY = 'simulador-mundial-2026';
   const $ = <T extends Element>(s: string) => el.querySelector<T>(s)!;
 
@@ -50,7 +67,8 @@ function init(el: HTMLElement) {
     codes.forEach((c) => st[c] = { code: c, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, dg: 0, pts: 0 });
     let played = 0;
     state.g[L].forEach((m, i) => {
-      const sa = num(m.sa), sb = num(m.sb); if (sa === null || sb === null) return; played++;
+      const real = REAL[L + '-' + i];
+      const sa = real ? real.sa : num(m.sa), sb = real ? real.sb : num(m.sb); if (sa === null || sb === null) return; played++;
       const [hi, ai] = PAIRS[i]; const h = st[codes[hi]], a = st[codes[ai]];
       h.pj++; a.pj++; h.gf += sa; h.gc += sb; a.gf += sb; a.gc += sa;
       if (sa > sb) { h.g++; a.p++; h.pts += 3; } else if (sa < sb) { a.g++; h.p++; a.pts += 3; } else { h.e++; a.e++; h.pts++; a.pts++; }
@@ -114,6 +132,7 @@ function init(el: HTMLElement) {
     const host = $('#groupArea'); host.innerHTML = '';
     host.appendChild(modeBar());
     if (state.mode === 'rank') host.appendChild(thirdsPanel());
+    else if (Object.keys(REAL).length) host.appendChild(mkEl(`<div class="realbanner">✅ ${realNote}</div>`));
     const grid = mkEl('<div class="groups" id="groupGrid"></div>'); host.appendChild(grid);
     LETTERS.forEach((L) => grid.appendChild(state.mode === 'rank' ? rankCard(L) : matchCard(L)));
     if (state.mode === 'match') LETTERS.forEach(renderStanding);
@@ -133,9 +152,14 @@ function init(el: HTMLElement) {
     const codes = GROUPS[L]; let rows = '';
     PAIRS.forEach((p, i) => {
       const h = codes[p[0]], a = codes[p[1]];
-      rows += `<div class="match" data-i="${i}">
+      const real = REAL[L + '-' + i];
+      const va = real ? String(real.sa) : state.g[L][i].sa;
+      const vb = real ? String(real.sb) : state.g[L][i].sb;
+      const dis = real ? 'disabled' : '';
+      const mid = real ? (real.live ? '<span class="vs live">🔴</span>' : '<span class="vs ft">FT</span>') : '<span class="vs">-</span>';
+      rows += `<div class="match${real ? ' realmatch' : ''}" data-i="${i}">
         <div class="side home"><span class="tname">${tname(h)}</span>${flag(h)}</div>
-        <div class="score"><input type="number" min="0" inputmode="numeric" data-g="${L}" data-i="${i}" data-s="sa" value="${state.g[L][i].sa}"><span class="vs">-</span><input type="number" min="0" inputmode="numeric" data-g="${L}" data-i="${i}" data-s="sb" value="${state.g[L][i].sb}"></div>
+        <div class="score"><input type="number" min="0" inputmode="numeric" data-g="${L}" data-i="${i}" data-s="sa" value="${va}" ${dis}>${mid}<input type="number" min="0" inputmode="numeric" data-g="${L}" data-i="${i}" data-s="sb" value="${vb}" ${dis}></div>
         <div class="side away">${flag(a)}<span class="tname">${tname(a)}</span></div></div>`;
     });
     return mkEl(`<div class="group" data-g="${L}"><div class="ghead"><div class="gname"><span class="tag">${L}</span> ${ui.common.group} ${L}</div><button class="dice" data-rg="${L}">${ui.sim.random}</button></div><div class="stand-wrap"></div><div class="matches"><div class="mlabel">${ui.sim.matches}</div>${rows}</div></div>`);
@@ -288,7 +312,7 @@ function init(el: HTMLElement) {
   $('#btnRandom').addEventListener('click', () => { LETTERS.forEach(randomizeGroup); if (state.mode === 'rank') state.thirdRank = shuffle(LETTERS.slice()); save(); buildGroups(); updateProgress(); toast(ui.sim.randomDone); });
   function randomizeGroup(L: string) {
     if (state.mode === 'rank') { state.rank[L] = shuffle(GROUPS[L].slice()); return; }
-    state.g[L] = PAIRS.map(() => { const r = () => { const x = Math.random(); return x < .45 ? 0 : x < .75 ? 1 : x < .9 ? 2 : x < .97 ? 3 : 4; }; return { sa: String(r()), sb: String(r()) }; });
+    state.g[L] = PAIRS.map((_p, i) => { if (REAL[L + '-' + i]) return state.g[L][i]; const r = () => { const x = Math.random(); return x < .45 ? 0 : x < .75 ? 1 : x < .9 ? 2 : x < .97 ? 3 : 4; }; return { sa: String(r()), sb: String(r()) }; });
   }
   function shuffle<T>(a: T[]) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
 
