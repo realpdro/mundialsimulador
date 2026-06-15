@@ -2,7 +2,7 @@
 import Base from '../../../layouts/Base.astro';
 import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, SLUG_TO_CODE, TEAMS, teamName, flagUrl } from '../../../data/tournament';
 import { UI } from '../../../i18n/ui';
-import { homeUrl, groupsUrl, groupUrl, teamUrl, spainDateLabel, spainTime, overnightNote } from '../../../lib/site';
+import { homeUrl, groupsUrl, groupUrl, teamUrl, spainDateLabel, spainTime, overnightNote, matchUrl } from '../../../lib/site';
 import RESULTS from '../../../data/results.json';
 import MatchCard from '../../../components/MatchCard.astro';
 
@@ -59,7 +59,7 @@ const jsonLd = {
     {fixtures.map((m) => {
       const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
       const result = a && b ? (RESULTS as any).byPair[[a, b].sort().join('-')] ?? null : null;
-      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} />;
+      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} previewHref={matchUrl(lang, m)} />;
     })}
   </div>
 

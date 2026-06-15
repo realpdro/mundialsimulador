@@ -2,7 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE, teamName, flagUrl } from '../../data/tournament';
 import { UI } from '../../i18n/ui';
-import { formatDay, spainTime, roundName, overnightNote } from '../../lib/site';
+import { formatDay, spainTime, roundName, overnightNote, matchUrl } from '../../lib/site';
 import RESULTS from '../../data/results.json';
 import MatchCard from '../../components/MatchCard.astro';
 
@@ -19,7 +19,7 @@ const updatedAt = (RESULTS as any).updatedAt
 interface Result { status: string; utc: string; scores?: Record<string, number>; live?: boolean; }
 interface Row {
   koSpain: string | null; date: string; koLocal: string | null; stadium: string; city: string;
-  label: string; ko: boolean; a: string | null; b: string | null; result: Result | null;
+  label: string; ko: boolean; a: string | null; b: string | null; result: Result | null; previewHref: string | null;
 }
 const BYPAIR = (RESULTS as any).byPair as Record<string, Result>;
 const resultFor = (a: string | null, b: string | null): Result | null =>
@@ -29,12 +29,12 @@ SCHEDULE.groupStage.forEach((m) => {
   const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
   rows.push({
     koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
-    label: `${ui.common.group} ${m.group}`, ko: false, a, b, result: resultFor(a, b),
+    label: `${ui.common.group} ${m.group}`, ko: false, a, b, result: resultFor(a, b), previewHref: matchUrl(lang, m),
   });
 });
 SCHEDULE.knockout.forEach((m) => rows.push({
   koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
-  label: roundName(lang, m.round), ko: true, a: null, b: null, result: null,
+  label: roundName(lang, m.round), ko: true, a: null, b: null, result: null, previewHref: null,
 }));
 rows.sort((x, y) => (x.koSpain || x.date).localeCompare(y.koSpain || y.date));
 const byDay = new Map<string, Row[]>();
@@ -68,7 +68,7 @@ const jsonLd = {
         </div>
         <div class="cal-grid">
           {ms.map((m) => (
-            <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} stadium={m.stadium} city={m.city} result={m.result} />
+            <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} stadium={m.stadium} city={m.city} result={m.result} previewHref={m.previewHref} />
           ))}
         </div>
       </div>

@@ -15,11 +15,13 @@ interface Props {
   stadium?: string | null;
   city?: string | null;
   result?: Result | null;
+  previewHref?: string | null;
 }
-const { lang, label, ko = false, koSpain, koLocal = null, a, b, stadium = null, city = null, result = null } = Astro.props;
+const { lang, label, ko = false, koSpain, koLocal = null, a, b, stadium = null, city = null, result = null, previewHref = null } = Astro.props;
 const ui = UI[lang];
 const FIN = { es: 'Final', en: 'Full-time', pt: 'Encerrado' }[lang];
 const LIVE = { es: '🔴 EN JUEGO', en: '🔴 LIVE', pt: '🔴 AO VIVO' }[lang];
+const PREV = { es: 'Previa y resultado →', en: 'Preview & result →', pt: 'Prévia e resultado →' }[lang];
 const r = result;
 const sa = r?.scores && a ? r.scores[a] : null;
 const sb = r?.scores && b ? r.scores[b] : null;
@@ -47,4 +49,5 @@ const note = overnightNote(koSpain, lang);
   </div>
   {(stadium || city) && <div class="cm-venue">📍 {stadium}{stadium && city ? ', ' : ''}{city}</div>}
   {note && !hasScore && !r?.live && <div class="cm-note">{note}</div>}
+  {previewHref && <a href={previewHref} style="display:block;text-align:center;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);font-size:.78rem;font-weight:700;color:var(--accent)">{PREV}</a>}
 </div>

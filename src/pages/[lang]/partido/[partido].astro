@@ -1,0 +1,197 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, type GroupMatch, SCHEDULE, ES_NAME_TO_CODE, teamName, flagUrl, matchSlug } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, calUrl, groupsUrl, groupUrl, teamUrl } from '../../../lib/site';
+import { spainTime, spainDateLabel } from '../../../lib/site';
+import { realStandings } from '../../../lib/standings';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  const paths: { params: { lang: Lang; partido: string }; props: { m: GroupMatch } }[] = [];
+  for (const lang of LANGS) {
+    for (const m of SCHEDULE.groupStage) {
+      const slug = matchSlug(m);
+      if (slug) paths.push({ params: { lang, partido: slug }, props: { m } });
+    }
+  }
+  return paths;
+}
+
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const { m } = Astro.props as { m: GroupMatch };
+const slug = matchSlug(m)!;
+const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+const L = m.group;
+const nameA = teamName(a, lang), nameB = teamName(b, lang);
+
+const result = (RESULTS as any).byPair?.[[a, b].sort().join('-')] ?? null;
+const sa = result?.scores?.[a], sb = result?.scores?.[b];
+const hasScore = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
+
+const day = spainDateLabel(m.koSpain, m.date, lang);
+const time = spainTime(m.koSpain);
+
+const gms = SCHEDULE.groupStage
+  .filter((x) => x.group === L)
+  .sort((x, y) => (x.koSpain || x.date).localeCompare(y.koSpain || y.date));
+const jornada = Math.floor(gms.findIndex((x) => x.teamA === m.teamA && x.teamB === m.teamB) / 2) + 1;
+const standings = realStandings(L, (RESULTS as any).byPair);
+
+const TH = { es: 'Equipo', en: 'Team', pt: 'Seleção' }[lang];
+const T = {
+  es: {
+    title: hasScore ? `${nameA} ${sa}-${sb} ${nameB} — Resultado · Mundial 2026` : `${nameA} vs ${nameB} — Mundial 2026: horario, previa y dónde verlo`,
+    desc: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}: resultado de la jornada ${jornada} del Grupo ${L} del Mundial 2026, jugado en ${m.stadium} (${m.city}). Clasificación del grupo actualizada.`
+      : `Previa de ${nameA} vs ${nameB}, jornada ${jornada} del Grupo ${L} del Mundial 2026: ${day} a las ${time}h (hora española) en ${m.stadium}, ${m.city}. Horario, dónde verlo y simula el resultado.`,
+    intro: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}. Así terminó el partido de la jornada ${jornada} del Grupo ${L}, disputado el ${day} en ${m.stadium} (${m.city}). Más abajo tienes cómo queda la clasificación del grupo.`
+      : `${nameA} y ${nameB} se enfrentan en la jornada ${jornada} del Grupo ${L} del Mundial 2026. Se juega el ${day} a las ${time}h (hora de España), en ${m.stadium} (${m.city}). Sigue el resultado en directo en cuanto arranque y, mientras tanto, simula cómo crees que va a quedar.`,
+    teamsH: 'Los equipos', scenOf: 'Escenarios de',
+    standH: `Clasificación del Grupo ${L}`,
+    notPlayed: `El Grupo ${L} todavía no tiene partidos jugados. Sé el primero en predecirlo.`,
+    seeGroup: `Ver Grupo ${L} completo →`,
+    faqH: 'Preguntas frecuentes',
+    faq: [
+      { q: `¿A qué hora juega ${nameA} contra ${nameB}?`, a: `${nameA} - ${nameB} se juega el ${day} a las ${time}h, hora de España.` },
+      { q: `¿Dónde se juega ${nameA} - ${nameB}?`, a: `En ${m.stadium}, en ${m.city}.` },
+      hasScore
+        ? { q: `¿Cómo quedó ${nameA} - ${nameB}?`, a: `El partido terminó ${nameA} ${sa}-${sb} ${nameB}.` }
+        : { q: `¿Quién va a ganar ${nameA} - ${nameB}?`, a: `Aún no se ha jugado. Simula el resultado en nuestro simulador del Mundial 2026 y compártelo con tus amigos.` },
+    ],
+    simulate: 'Simular el Mundial', toCal: 'Calendario completo →',
+  },
+  en: {
+    title: hasScore ? `${nameA} ${sa}-${sb} ${nameB} — Result · World Cup 2026` : `${nameA} vs ${nameB} — World Cup 2026: kickoff time & preview`,
+    desc: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}: result of Matchday ${jornada}, Group ${L} at the 2026 World Cup, played at ${m.stadium} (${m.city}). Updated group standings.`
+      : `Preview of ${nameA} vs ${nameB}, Matchday ${jornada} of Group ${L} at the 2026 World Cup: ${day} at ${time} (Spain time) at ${m.stadium}, ${m.city}. Kickoff, where to watch and simulate the result.`,
+    intro: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}. Final score of the Matchday ${jornada} clash in Group ${L}, played on ${day} at ${m.stadium} (${m.city}). See below how it affects the group standings.`
+      : `${nameA} and ${nameB} meet on Matchday ${jornada} of Group ${L} at the 2026 World Cup. Kickoff is ${day} at ${time} (Spain time), at ${m.stadium} (${m.city}). Follow the result live once it starts and, in the meantime, simulate how you think it will end.`,
+    teamsH: 'The teams', scenOf: 'Scenarios for',
+    standH: `Group ${L} standings`,
+    notPlayed: `Group ${L} hasn't played any matches yet. Be the first to predict it.`,
+    seeGroup: `See full Group ${L} →`,
+    faqH: 'FAQ',
+    faq: [
+      { q: `What time is ${nameA} vs ${nameB}?`, a: `${nameA} vs ${nameB} kicks off on ${day} at ${time} (Spain time).` },
+      { q: `Where is ${nameA} vs ${nameB} played?`, a: `At ${m.stadium}, in ${m.city}.` },
+      hasScore
+        ? { q: `How did ${nameA} vs ${nameB} end?`, a: `The match ended ${nameA} ${sa}-${sb} ${nameB}.` }
+        : { q: `Who will win ${nameA} vs ${nameB}?`, a: `It hasn't been played yet. Simulate the result in our 2026 World Cup simulator and share it.` },
+    ],
+    simulate: 'Simulate the World Cup', toCal: 'Full schedule →',
+  },
+  pt: {
+    title: hasScore ? `${nameA} ${sa}-${sb} ${nameB} — Resultado · Copa 2026` : `${nameA} vs ${nameB} — Copa 2026: horário e prévia`,
+    desc: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}: resultado da rodada ${jornada} do Grupo ${L} da Copa 2026, em ${m.stadium} (${m.city}). Classificação do grupo atualizada.`
+      : `Prévia de ${nameA} vs ${nameB}, rodada ${jornada} do Grupo ${L} da Copa 2026: ${day} às ${time} (horário da Espanha) em ${m.stadium}, ${m.city}. Horário, onde assistir e simule o resultado.`,
+    intro: hasScore
+      ? `${nameA} ${sa}-${sb} ${nameB}. Assim terminou o jogo da rodada ${jornada} do Grupo ${L}, disputado em ${day} em ${m.stadium} (${m.city}). Veja abaixo como fica a classificação do grupo.`
+      : `${nameA} e ${nameB} se enfrentam na rodada ${jornada} do Grupo ${L} da Copa 2026. O jogo é ${day} às ${time} (horário da Espanha), em ${m.stadium} (${m.city}). Acompanhe o resultado ao vivo assim que começar e, enquanto isso, simule como você acha que vai terminar.`,
+    teamsH: 'As seleções', scenOf: 'Cenários de',
+    standH: `Classificação do Grupo ${L}`,
+    notPlayed: `O Grupo ${L} ainda não tem jogos disputados. Seja o primeiro a prever.`,
+    seeGroup: `Ver Grupo ${L} completo →`,
+    faqH: 'Perguntas frequentes',
+    faq: [
+      { q: `Que horas é ${nameA} x ${nameB}?`, a: `${nameA} x ${nameB} acontece ${day} às ${time} (horário da Espanha).` },
+      { q: `Onde é ${nameA} x ${nameB}?`, a: `Em ${m.stadium}, em ${m.city}.` },
+      hasScore
+        ? { q: `Como terminou ${nameA} x ${nameB}?`, a: `O jogo terminou ${nameA} ${sa}-${sb} ${nameB}.` }
+        : { q: `Quem vai ganhar ${nameA} x ${nameB}?`, a: `Ainda não foi disputado. Simule o resultado no nosso simulador da Copa 2026 e compartilhe.` },
+    ],
+    simulate: 'Simular a Copa', toCal: 'Calendário completo →',
+  },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const url = `${site}/${lang}/partido/${slug}/`;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org', '@type': 'SportsEvent',
+    name: `${nameA} vs ${nameB}`, sport: 'Soccer',
+    startDate: m.koSpain || m.date, url,
+    location: { '@type': 'Place', name: m.stadium, address: m.city },
+    competitor: [
+      { '@type': 'SportsTeam', name: nameA }, { '@type': 'SportsTeam', name: nameB },
+    ],
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: T.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+const breadcrumbs = [
+  { name: ui.nav.home, url: homeUrl(lang) },
+  { name: ui.nav.groups, url: groupsUrl(lang) },
+  { name: `${ui.common.group} ${L}`, url: groupUrl(lang, L) },
+  { name: `${nameA} - ${nameB}`, url: `/${lang}/partido/${slug}/` },
+];
+---
+<Base lang={lang} title={T.title} description={T.desc} path={`partido/${slug}/`} jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › {nameA} - {nameB}</p>
+
+  <div class="page-head">
+    <h1>
+      <img class="flag" style="display:inline-block;vertical-align:-2px" src={flagUrl(a)} alt="" /> {nameA}
+      <span style="opacity:.45;font-weight:600;margin:0 5px">{hasScore ? `${sa}-${sb}` : 'vs'}</span>
+      {nameB} <img class="flag" style="display:inline-block;vertical-align:-2px" src={flagUrl(b)} alt="" />
+    </h1>
+    <p>{T.intro}</p>
+  </div>
+
+  <div class="cal-grid" style="max-width:540px;margin:0 auto 22px">
+    <MatchCard lang={lang} label={`${ui.common.group} ${L} · J${jornada}`} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} />
+  </div>
+
+  <h2 class="section-h">{T.teamsH}</h2>
+  <div class="team-grid">
+    <a class="team-card" href={teamUrl(lang, a)}><img class="flag lg" loading="lazy" src={flagUrl(a)} alt="" /> {nameA}</a>
+    <a class="team-card" href={teamUrl(lang, b)}><img class="flag lg" loading="lazy" src={flagUrl(b)} alt="" /> {nameB}</a>
+  </div>
+  <p style="text-align:center;margin:12px 0 0">
+    <a class="fact" href={`${teamUrl(lang, a)}escenarios/`} style="color:var(--accent)">→ {T.scenOf} {nameA}</a>
+    <a class="fact" href={`${teamUrl(lang, b)}escenarios/`} style="color:var(--accent)">→ {T.scenOf} {nameB}</a>
+  </p>
+
+  <h2 class="section-h">{T.standH}</h2>
+  {standings.played > 0 ? (
+    <div style="background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <table class="stand">
+        <thead><tr><th class="teamh">{TH}</th><th>{ui.common.pj}</th><th>{ui.common.w}</th><th>{ui.common.d}</th><th>{ui.common.l}</th><th>{ui.common.gd}</th><th>{ui.common.points}</th></tr></thead>
+        <tbody>
+          {standings.order.map((s, idx) => (
+            <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''}>
+              <td class="team"><div class="row"><span class="pos">{idx + 1}</span><img class="flag" loading="lazy" src={flagUrl(s.code)} alt="" /><span class="tname">{teamName(s.code, lang)}</span></div></td>
+              <td>{s.pj}</td><td>{s.g}</td><td>{s.e}</td><td>{s.p}</td><td>{s.dg > 0 ? '+' : ''}{s.dg}</td><td class="pts">{s.pts}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p class="cal-badge">{T.notPlayed}</p>
+  )}
+  <p style="text-align:center;margin:0 0 8px"><a class="fact" href={groupUrl(lang, L)} style="color:var(--accent)">{T.seeGroup}</a></p>
+
+  <h2 class="section-h">{T.faqH}</h2>
+  <div style="max-width:680px;margin:0 auto">
+    {T.faq.map((f) => (
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px">
+        <h3 style="margin:0 0 6px;font-size:1rem">{f.q}</h3>
+        <p style="margin:0;color:var(--muted2)">{f.a}</p>
+      </div>
+    ))}
+  </div>
+
+  <p style="text-align:center;margin-top:26px">
+    <a class="btn primary lg" href={homeUrl(lang)}>{T.simulate}</a>
+  </p>
+  <p style="text-align:center;margin-top:10px"><a class="fact" href={calUrl(lang)} style="color:var(--accent)">{T.toCal}</a></p>
+</Base>

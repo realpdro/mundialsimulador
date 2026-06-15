@@ -145,3 +145,11 @@ export interface Schedule { groupStage: GroupMatch[]; knockout: KoMatch[]; }
 
 export const SCHEDULE = scheduleData as Schedule;
 export const THIRD_TABLE = thirdTableData as Record<string, Record<string, string>>;
+
+// Slug estable de un partido de grupos, igual en los 3 idiomas (basado en el slug ES de cada equipo).
+// p. ej. España vs Cabo Verde -> "espana-vs-cabo-verde". null si algún equipo no está aún definido.
+export function matchSlug(m: GroupMatch): string | null {
+  const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+  if (!a || !b) return null;
+  return `${TEAMS[a].slug}-vs-${TEAMS[b].slug}`;
+}

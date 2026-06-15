@@ -1,5 +1,5 @@
 import type { Lang } from '../data/tournament';
-import { TEAMS } from '../data/tournament';
+import { TEAMS, matchSlug } from '../data/tournament';
 import { UI } from '../i18n/ui';
 
 const LOCALE: Record<Lang, string> = { es: 'es-ES', en: 'en-GB', pt: 'pt-BR' };
@@ -52,6 +52,10 @@ export const calUrl = (l: Lang) => `/${l}/calendario/`;
 export const groupsUrl = (l: Lang) => `/${l}/grupos/`;
 export const groupUrl = (l: Lang, letter: string) => `/${l}/grupos/${letter.toLowerCase()}/`;
 export const teamUrl = (l: Lang, code: string) => `/${l}/seleccion/${TEAMS[code].slug}/`;
+export const matchUrl = (l: Lang, m: Parameters<typeof matchSlug>[0]): string | null => {
+  const s = matchSlug(m);
+  return s ? `/${l}/partido/${s}/` : null;
+};
 
 const RK: Record<string, 'r32' | 'r16' | 'qf' | 'sf' | 'third' | 'final'> = {
   R32: 'r32', R16: 'r16', QF: 'qf', SF: 'sf', '3rd': 'third', Final: 'final',
