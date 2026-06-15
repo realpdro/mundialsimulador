@@ -209,7 +209,13 @@ table.stand tr.q3 td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
 .tile:hover{transform:translateY(-2px);border-color:#34507c;box-shadow:var(--shadow)}
 .tile .tl-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:800}
 .tile .tl-head .tag{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#22304e,#2c3e63);color:var(--accent);font-size:14px}
-.tile .tl-team{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;color:var(--muted)}
+.tile .tl-team{display:flex;align-items:center;gap:9px;font-size:13px;padding:6px 0;color:var(--muted);border-top:1px solid #1a2336}
+.tile .tl-pos{width:19px;height:19px;border-radius:5px;display:grid;place-items:center;font-size:10.5px;font-weight:800;background:#1c2942;color:var(--muted2);flex:0 0 auto}
+.tile .tl-pos.p1,.tile .tl-pos.p2{background:var(--green);color:#04210f}
+.tile .tl-pos.p3{background:var(--gold);color:#3a2c00}
+.tile .tl-pos.p4{opacity:.55}
+.tile .tl-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);font-weight:600}
+.tile .tl-pts{font-size:13px;font-weight:800;color:var(--txt)}
 .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .team-card{display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:13px;padding:11px 13px;font-weight:600;font-size:14px;transition:.15s}
 .team-card:hover{transform:translateY(-2px);border-color:#34507c}
