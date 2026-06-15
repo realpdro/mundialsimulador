@@ -1,0 +1,159 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, teamName, flagUrl } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, groupsUrl, groupUrl, teamUrl } from '../../../lib/site';
+import { computeQualification } from '../../../lib/qualification';
+import RESULTS from '../../../data/results.json';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const Q = computeQualification((RESULTS as any).byPair || {});
+
+const updatedAt = (RESULTS as any).updatedAt
+  ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
+  : null;
+
+const directQ = Q.groups.filter((g) => g.complete).flatMap((g) => [g.order[0], g.order[1]]);
+const thirdQ = Q.allGroupsComplete ? Q.thirds.filter((t) => t.qualifies).map((t) => t.stat) : [];
+const qualified = [...directQ, ...thirdQ];
+
+const C = {
+  es: {
+    title: 'Clasificados del Mundial 2026 en directo — 1.º, 2.º y mejores terceros',
+    desc: 'Quién se clasifica a la fase eliminatoria del Mundial 2026 en tiempo real: los 2 primeros de cada grupo y la carrera por los 8 mejores terceros. Se actualiza solo con los resultados.',
+    h1: 'Quién se clasifica en el Mundial 2026',
+    intro: 'Con 48 selecciones, pasan a la fase eliminatoria los 2 primeros de cada uno de los 12 grupos (24 equipos) más los 8 mejores terceros: 32 selecciones a los dieciseisavos de final. Aquí ves quién va clasificado en directo.',
+    upd: 'actualizado', live: 'en directo',
+    byGroup: 'Estado por grupo', thirds: 'Carrera por los mejores terceros',
+    thirdsIntro: 'Los 8 mejores terceros (de los 12 grupos) también se clasifican. Se ordenan por puntos, diferencia de goles y goles a favor.',
+    provisional: 'Provisional: cambiará según avancen los grupos.', definitive: 'Definitivo: grupos completados.',
+    qualifiedH: 'Ya clasificados', qualifiedNone: 'Todavía no hay clasificados matemáticos. Esta sección se irá llenando a medida que terminen los grupos.',
+    qualifiedCount: (n: number) => `${n} de 32 plazas decididas`,
+    legDirect: '1.º y 2.º (clasifican directo)', legThird: '3.º (pelea por mejor tercero)', legOut: '4.º (eliminado)',
+    colGroup: 'Grupo', colTeam: 'Selección', colStatus: 'Estado', gf: 'GF',
+    qIn: 'Clasifica', qOut: 'Fuera', emptyGroup: 'Sin jugar',
+  },
+  en: {
+    title: '2026 World Cup qualified teams (live) — 1st, 2nd & best third-placed',
+    desc: 'Who qualifies for the 2026 World Cup knockout stage in real time: the top 2 of each group and the race for the 8 best third-placed teams. Updates automatically with the results.',
+    h1: 'Who qualifies at the 2026 World Cup',
+    intro: 'With 48 teams, the top 2 of each of the 12 groups (24 teams) plus the 8 best third-placed teams reach the knockout stage: 32 teams into the round of 32. Here you can see who qualifies live.',
+    upd: 'updated', live: 'live',
+    byGroup: 'Status by group', thirds: 'Best third-placed race',
+    thirdsIntro: 'The 8 best third-placed teams (out of 12 groups) also qualify. They are ranked by points, goal difference and goals scored.',
+    provisional: 'Provisional: it will change as the groups progress.', definitive: 'Final: all groups completed.',
+    qualifiedH: 'Already qualified', qualifiedNone: 'No teams are mathematically through yet. This section fills up as the groups finish.',
+    qualifiedCount: (n: number) => `${n} of 32 spots decided`,
+    legDirect: '1st & 2nd (qualify directly)', legThird: '3rd (best-third race)', legOut: '4th (eliminated)',
+    colGroup: 'Group', colTeam: 'Team', colStatus: 'Status', gf: 'GF',
+    qIn: 'Qualifies', qOut: 'Out', emptyGroup: 'Not played',
+  },
+  pt: {
+    title: 'Classificados da Copa 2026 ao vivo — 1.º, 2.º e melhores terceiros',
+    desc: 'Quem se classifica para a fase eliminatória da Copa 2026 em tempo real: os 2 primeiros de cada grupo e a corrida pelos 8 melhores terceiros. Atualiza sozinho com os resultados.',
+    h1: 'Quem se classifica na Copa 2026',
+    intro: 'Com 48 seleções, avançam à fase eliminatória os 2 primeiros de cada um dos 12 grupos (24 equipes) mais os 8 melhores terceiros: 32 seleções na primeira fase eliminatória. Aqui você vê quem está classificado ao vivo.',
+    upd: 'atualizado', live: 'ao vivo',
+    byGroup: 'Situação por grupo', thirds: 'Corrida pelos melhores terceiros',
+    thirdsIntro: 'Os 8 melhores terceiros (dos 12 grupos) também se classificam. São ordenados por pontos, saldo de gols e gols pró.',
+    provisional: 'Provisório: vai mudar conforme os grupos avançam.', definitive: 'Definitivo: grupos encerrados.',
+    qualifiedH: 'Já classificados', qualifiedNone: 'Ainda não há classificados matemáticos. Esta seção se preenche conforme os grupos terminam.',
+    qualifiedCount: (n: number) => `${n} de 32 vagas decididas`,
+    legDirect: '1.º e 2.º (classificam direto)', legThird: '3.º (corrida do melhor terceiro)', legOut: '4.º (eliminado)',
+    colGroup: 'Grupo', colTeam: 'Seleção', colStatus: 'Situação', gf: 'GP',
+    qIn: 'Classifica', qOut: 'Fora', emptyGroup: 'Sem jogar',
+  },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'ItemList',
+  name: C.h1, url: `${site}/${lang}/clasificados/`, numberOfItems: qualified.length,
+  itemListElement: qualified.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: teamName(s.code, lang) })),
+};
+const POS = (i: number) => (i < 2 ? '#22c55e' : i === 2 ? '#f59e0b' : '#ef4444');
+---
+<Base lang={lang} title={C.title} description={C.desc} path="clasificados/" active="qualified" jsonLd={jsonLd}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  {Q.anyPlayed && updatedAt && <p class="cal-badge">🟢 {C.live} · {C.upd} {updatedAt}h</p>}
+
+  <h2 class="section-h">{C.byGroup}</h2>
+  <p class="leg">
+    <span><i style="background:#22c55e"></i>{C.legDirect}</span>
+    <span><i style="background:#f59e0b"></i>{C.legThird}</span>
+    <span><i style="background:#ef4444"></i>{C.legOut}</span>
+  </p>
+  <div class="qgrid">
+    {Q.groups.map((g) => (
+      <div class="qcard">
+        <a class="qh" href={groupUrl(lang, g.L)}>{ui.common.group} {g.L}</a>
+        {g.order.map((s, i) => (
+          <a class="qrow" href={teamUrl(lang, s.code)} style={`border-left-color:${POS(i)}`}>
+            <span class="qpos">{i + 1}</span>
+            <img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.code)} alt="" />
+            <span class="qname">{teamName(s.code, lang)}</span>
+            <b class="qpts">{g.played > 0 ? s.pts : '·'}</b>
+          </a>
+        ))}
+      </div>
+    ))}
+  </div>
+
+  <h2 class="section-h">{C.thirds}</h2>
+  <p class="sub">{C.thirdsIntro}</p>
+  <p class="sub" style="font-weight:700;color:var(--accent)">{Q.allGroupsComplete ? C.definitive : C.provisional}</p>
+  <div class="tablewrap">
+    <table class="stand">
+      <thead><tr><th class="teamh">{C.colTeam}</th><th>{C.colGroup}</th><th>{ui.common.pj}</th><th>{ui.common.points}</th><th>{ui.common.gd}</th><th>{C.gf}</th><th>{C.colStatus}</th></tr></thead>
+      <tbody>
+        {Q.thirds.map((t) => {
+          const ok = t.qualifies;
+          const color = Q.allGroupsComplete ? (ok ? '#22c55e' : '#ef4444') : (ok ? '#f59e0b' : 'var(--muted2)');
+          return (
+            <tr>
+              <td class="team"><div class="row"><span class="pos">{t.rank}</span><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(t.stat.code)} alt="" /><a href={teamUrl(lang, t.stat.code)} style="color:inherit"><span class="tname">{teamName(t.stat.code, lang)}</span></a></div></td>
+              <td><a href={groupUrl(lang, t.L)} style="color:var(--accent)">{t.L}</a></td>
+              <td>{t.stat.pj}</td><td class="pts">{t.stat.pts}</td><td>{t.stat.dg > 0 ? '+' : ''}{t.stat.dg}</td><td>{t.stat.gf}</td>
+              <td><b style={`color:${color}`}>{ok ? C.qIn : C.qOut}</b></td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-h">{C.qualifiedH} <small style="color:var(--muted2);font-weight:600;font-size:14px">· {C.qualifiedCount(qualified.length)}</small></h2>
+  {qualified.length === 0 ? (
+    <p class="cal-badge">{C.qualifiedNone}</p>
+  ) : (
+    <div class="team-grid">
+      {qualified.map((s) => (
+        <a class="team-card" href={teamUrl(lang, s.code)}><img class="flag lg" width="30" height="21" loading="lazy" src={flagUrl(s.code)} alt="" /> {teamName(s.code, lang)}</a>
+      ))}
+    </div>
+  )}
+
+  <p style="text-align:center;margin-top:26px">
+    <a class="btn primary lg" href={groupsUrl(lang)}>{ui.nav.groups}</a>
+  </p>
+</Base>
+
+<style>
+  .leg { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin:-8px 0 14px; font-size:13px; color:var(--muted2); }
+  .leg span { display:inline-flex; align-items:center; gap:6px; }
+  .leg i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .sub { font-size:13px; color:var(--muted2); margin:-6px 2px 10px; max-width:680px; }
+  .qgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(225px,1fr)); gap:12px; margin-bottom:10px; }
+  .qcard { background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:12px; padding:8px; }
+  .qh { display:block; font-weight:800; padding:4px 6px 8px; color:var(--text); }
+  .qrow { display:flex; align-items:center; gap:8px; padding:6px 8px; border-left:3px solid transparent; border-radius:0 6px 6px 0; color:inherit; }
+  .qrow:hover { background:rgba(255,255,255,.04); }
+  .qpos { width:16px; text-align:center; font-weight:700; color:var(--muted2); font-size:13px; }
+  .qname { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; }
+  .qpts { font-weight:800; }
+  .tablewrap { background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:14px; overflow:hidden; max-width:680px; margin:0 auto 8px; }
+</style>
