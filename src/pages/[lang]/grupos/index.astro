@@ -27,7 +27,7 @@ const BYPAIR = (RESULTS as any).byPair as Record<string, any>;
         {st.order.map((s, idx) => (
           <a class="tl-team" href={teamUrl(lang, s.code)}>
             <span class={st.played > 0 ? `tl-pos p${idx + 1}` : 'tl-pos'}>{idx + 1}</span>
-            <img class="flag" loading="lazy" src={flagUrl(s.code)} alt="" />
+            <img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.code)} alt="" />
             <span class="tl-name">{teamName(s.code, lang)}</span>
             {st.played > 0 && <b class="tl-pts">{s.pts}</b>}
           </a>

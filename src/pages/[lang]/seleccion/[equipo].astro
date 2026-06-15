@@ -29,7 +29,7 @@ const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'SportsTeam', name, sport: 'Soccer',
   url: `${site}/${lang}/seleccion/${team.slug}/`,
-  logo: flagUrl(code, 160),
+  logo: `${site}/flags/${team.iso}.webp`,
 };
 ---
 <Base
@@ -43,7 +43,7 @@ const jsonLd = {
 >
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › {name}</p>
   <div class="page-head">
-    <h1><img class="flag lg" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {ui.team.h1(name)}</h1>
+    <h1><img class="flag lg" width="30" height="21" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {ui.team.h1(name)}</h1>
     <p>{ui.team.intro(name, L)}</p>
   </div>
 
@@ -78,7 +78,7 @@ const jsonLd = {
   <div class="team-grid">
     {rivals.map((c) => (
       <a class="team-card" href={teamUrl(lang, c)}>
-        <img class="flag lg" loading="lazy" src={flagUrl(c)} alt="" /> {teamName(c, lang)}
+        <img class="flag lg" width="30" height="21" loading="lazy" src={flagUrl(c)} alt="" /> {teamName(c, lang)}
       </a>
     ))}
   </div>

@@ -79,9 +79,11 @@ export function teamName(code: string | null | undefined, lang: Lang): string {
   if (!code || !TEAMS[code]) return '';
   return TEAMS[code].names[lang];
 }
-export function flagUrl(code: string | null | undefined, w = 40): string {
+// Banderas auto-alojadas en WebP (public/flags/<iso>.webp, generadas por scripts/make-flags.mjs).
+// El parámetro de ancho se mantiene por compatibilidad pero ya no se usa (un único archivo nítido).
+export function flagUrl(code: string | null | undefined, _w = 40): string {
   if (!code || !TEAMS[code]) return '';
-  return `https://flagcdn.com/w${w}/${TEAMS[code].iso}.png`;
+  return `/flags/${TEAMS[code].iso}.webp`;
 }
 
 export const GROUPS: Record<string, string[]> = {

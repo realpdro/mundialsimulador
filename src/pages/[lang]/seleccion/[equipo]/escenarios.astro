@@ -54,7 +54,7 @@ const jsonLd = {
 >
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › <a href={groupUrl(lang, L)}>{ui.common.group} {L}</a> › <a href={teamUrl(lang, code)}>{name}</a></p>
   <div class="page-head">
-    <h1><img class="flag lg" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {s.h1(name)}</h1>
+    <h1><img class="flag lg" width="30" height="21" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={flagUrl(code)} alt="" /> {s.h1(name)}</h1>
     <p>{s.intro(name, L)}</p>
   </div>
 
@@ -64,7 +64,7 @@ const jsonLd = {
       <p>{ans1}</p>
       {firstG && (
         <div class="cands"><span class="cands-l">{s.candidates}</span>{GROUPS[firstG].map((c) => (
-          <a class="cand" href={teamUrl(lang, c)}><img class="flag" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
+          <a class="cand" href={teamUrl(lang, c)}><img class="flag" width="20" height="14" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
         ))}</div>
       )}
     </div>
@@ -73,7 +73,7 @@ const jsonLd = {
       <p>{ans2}</p>
       {secondG && (
         <div class="cands"><span class="cands-l">{s.candidates}</span>{GROUPS[secondG].map((c) => (
-          <a class="cand" href={teamUrl(lang, c)}><img class="flag" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
+          <a class="cand" href={teamUrl(lang, c)}><img class="flag" width="20" height="14" loading="lazy" src={flagUrl(c)} alt="" />{teamName(c, lang)}</a>
         ))}</div>
       )}
     </div>

@@ -63,7 +63,7 @@ const LIVE = {
   <div class="team-grid">
     {codes.map((code) => (
       <a class="team-card" href={teamUrl(lang, code)}>
-        <img class="flag lg" loading="lazy" src={flagUrl(code)} alt="" /> {teamName(code, lang)}
+        <img class="flag lg" width="30" height="21" loading="lazy" src={flagUrl(code)} alt="" /> {teamName(code, lang)}
       </a>
     ))}
   </div>
@@ -78,7 +78,7 @@ const LIVE = {
           <tbody>
             {standings.order.map((s, idx) => (
               <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''}>
-                <td class="team"><div class="row"><span class="pos">{idx + 1}</span><img class="flag" loading="lazy" src={flagUrl(s.code)} alt="" /><span class="tname">{teamName(s.code, lang)}</span></div></td>
+                <td class="team"><div class="row"><span class="pos">{idx + 1}</span><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.code)} alt="" /><span class="tname">{teamName(s.code, lang)}</span></div></td>
                 <td>{s.pj}</td><td>{s.g}</td><td>{s.e}</td><td>{s.p}</td><td>{s.dg > 0 ? '+' : ''}{s.dg}</td><td class="pts">{s.pts}</td>
               </tr>
             ))}

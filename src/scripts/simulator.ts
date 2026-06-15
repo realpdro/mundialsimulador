@@ -37,7 +37,7 @@ function init(el: HTMLElement) {
 
   const tname = (c?: string | null) => (c && TEAMS[c] ? TEAMS[c].names[lang] : ui.common.tbd);
   const flag = (c?: string | null, lg?: boolean) =>
-    c && TEAMS[c] ? `<img class="flag${lg ? ' lg' : ''}" loading="lazy" decoding="async" src="https://flagcdn.com/w40/${TEAMS[c].iso}.png" alt="">` : '';
+    c && TEAMS[c] ? `<img class="flag${lg ? ' lg' : ''}" width="${lg ? 30 : 23}" height="${lg ? 21 : 16}" loading="lazy" decoding="async" src="/flags/${TEAMS[c].iso}.webp" alt="">` : '';
   const mkEl = (html: string) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild as HTMLElement; };
   const num = (v: any): number | null => { if (v === '' || v == null) return null; const n = +v; return isNaN(n) ? null : n; };
   const cmp = (a: any, b: any) => (b.pts - a.pts) || (b.dg - a.dg) || (b.gf - a.gf);
@@ -357,7 +357,7 @@ function init(el: HTMLElement) {
     else fallbackCopy(done);
   }
   function fallbackCopy(done: () => void) { const i = el.querySelector<HTMLInputElement>('#shareUrl'); if (i) { i.focus(); i.select(); try { document.execCommand('copy'); done(); } catch {} } }
-  function loadImg(code: string): Promise<HTMLImageElement | null> { return new Promise((res) => { if (!code || !TEAMS[code]) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = 'https://flagcdn.com/w160/' + TEAMS[code].iso + '.png'; }); }
+  function loadImg(code: string): Promise<HTMLImageElement | null> { return new Promise((res) => { if (!code || !TEAMS[code]) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = '/flags/' + TEAMS[code].iso + '.webp'; }); }
   async function downloadImage() {
     const c = ui.sim.imgCard; const ctx = computeAll();
     const champ = winnerOf(104, ctx), finA = resolve(FN[0].a, ctx), finB = resolve(FN[0].b, ctx);

@@ -41,10 +41,10 @@ const note = overnightNote(koSpain, lang);
   </div>
   <div class="cm-teams">
     {a
-      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{teamName(a, lang)}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
+      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{teamName(a, lang)}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
       : <div class="cm-team"><span class="tname">{ui.common.tbd}</span></div>}
     {b
-      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{teamName(b, lang)}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
+      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{teamName(b, lang)}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
       : <div class="cm-team"><span class="tname">{ui.common.tbd}</span></div>}
   </div>
   {(stadium || city) && <div class="cm-venue">📍 {stadium}{stadium && city ? ', ' : ''}{city}</div>}

@@ -37,7 +37,7 @@ const jsonLd = {
               <td class="team"><div class="row"><span class="pos">{idx + 1}</span>{s.name}</div></td>
               <td style="text-align:left">
                 <a href={teamUrl(lang, s.team)} style="display:inline-flex;align-items:center;gap:7px;color:inherit">
-                  <img class="flag" loading="lazy" src={flagUrl(s.team)} alt="" />{teamName(s.team, lang)}
+                  <img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.team)} alt="" />{teamName(s.team, lang)}
                 </a>
               </td>
               <td class="pts">{s.goals}</td>
