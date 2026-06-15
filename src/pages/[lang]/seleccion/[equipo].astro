@@ -22,6 +22,8 @@ const esName = team.names.es;
 const fixtures = SCHEDULE.groupStage
   .filter((m) => m.teamA === esName || m.teamB === esName)
   .sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
+const teamScorers = (((RESULTS as any).scorers || []) as any[]).filter((s) => s.team === code);
+const GOL = { es: 'Goleadores', en: 'Top scorers', pt: 'Artilheiros' }[lang];
 
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
 const jsonLd = {
@@ -59,6 +61,17 @@ const jsonLd = {
       return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} />;
     })}
   </div>
+
+  {teamScorers.length > 0 && (
+    <>
+      <h2 class="section-h">⚽ {GOL}</h2>
+      <div class="team-grid">
+        {teamScorers.map((s) => (
+          <div class="team-card"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{s.name}</span><b style="color:var(--green);font-weight:800">{s.goals}</b></div>
+        ))}
+      </div>
+    </>
+  )}
 
   <h2 class="section-h">{ui.team.rivals}</h2>
   <div class="team-grid">

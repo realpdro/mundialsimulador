@@ -80,17 +80,30 @@ async function main() {
     byPair[key] = entry;
   }
 
+  // Goleadores (Bota de Oro) — también disponibles en el plan gratuito.
+  let scorers = [];
+  try {
+    const sr = await fetch('https://api.football-data.org/v4/competitions/WC/scorers?limit=100', { headers: { 'X-Auth-Token': KEY } });
+    if (sr.ok) {
+      const sd = await sr.json();
+      scorers = (sd.scorers || [])
+        .map((x) => { const t = resolve(x.team?.name); return t ? { name: x.player?.name || '?', goals: x.goals || 0, assists: x.assists || 0, team: t } : null; })
+        .filter(Boolean)
+        .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name));
+    }
+  } catch {}
+
   const outPath = join(root, 'src', 'data', 'results.json');
-  let oldByPair = '';
-  try { oldByPair = JSON.stringify(JSON.parse(readFileSync(outPath, 'utf8')).byPair || {}); } catch {}
-  const newByPair = JSON.stringify(byPair);
-  if (newByPair === oldByPair) {
-    console.log(`= Sin cambios reales (${withScore} con marcador, ${live} en juego). No se reescribe ni redespliega.`);
+  let oldData = '';
+  try { const o = JSON.parse(readFileSync(outPath, 'utf8')); oldData = JSON.stringify({ byPair: o.byPair || {}, scorers: o.scorers || [] }); } catch {}
+  const newData = JSON.stringify({ byPair, scorers });
+  if (newData === oldData) {
+    console.log(`= Sin cambios reales (${withScore} con marcador, ${live} en juego, ${scorers.length} goleadores). No se reescribe ni redespliega.`);
     process.exitCode = 3;
     return;
   }
-  writeFileSync(outPath, JSON.stringify({ updatedAt: new Date().toISOString(), source: 'football-data.org', byPair }, null, 0));
-  console.log(`✅ Resultados ACTUALIZADOS: ${Object.keys(byPair).length} partidos · ${withScore} con marcador · ${live} en juego.`);
+  writeFileSync(outPath, JSON.stringify({ updatedAt: new Date().toISOString(), source: 'football-data.org', byPair, scorers }, null, 0));
+  console.log(`✅ Resultados ACTUALIZADOS: ${Object.keys(byPair).length} partidos · ${withScore} con marcador · ${live} en juego · ${scorers.length} goleadores.`);
   if (unmapped.size) console.log('⚠️  Sin mapear:', [...unmapped].join(', '));
   else console.log('✅ Todos los equipos mapeados correctamente.');
 }

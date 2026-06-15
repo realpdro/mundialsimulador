@@ -1,0 +1,50 @@
+---
+import Base from '../../layouts/Base.astro';
+import { LANGS, type Lang, teamName, flagUrl } from '../../data/tournament';
+import RESULTS from '../../data/results.json';
+import { teamUrl } from '../../lib/site';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const scorers = ((RESULTS as any).scorers || []) as { name: string; goals: number; assists: number; team: string }[];
+
+const C = {
+  es: { title: 'Máximos goleadores del Mundial 2026 · Bota de Oro', desc: 'Tabla de máximos goleadores del Mundial 2026 en vivo: quién lidera la Bota de Oro, con goles por jugador y selección. Se actualiza solo.', h1: 'Máximos goleadores del Mundial 2026', intro: 'Quién va ganando la Bota de Oro. Se actualiza automáticamente con los goles reales.', player: 'Jugador', team: 'Selección', goals: 'Goles', empty: 'Todavía no hay goleadores registrados. Vuelve cuando rueden los goles.' },
+  en: { title: 'Top scorers of the 2026 World Cup · Golden Boot', desc: 'Live top scorers table of the 2026 World Cup: who leads the Golden Boot, with goals per player and team. Updates automatically.', h1: 'Top scorers of the 2026 World Cup', intro: 'Who is winning the Golden Boot. It updates automatically with the real goals.', player: 'Player', team: 'Team', goals: 'Goals', empty: 'No scorers yet. Come back once the goals start.' },
+  pt: { title: 'Artilheiros da Copa 2026 · Chuteira de Ouro', desc: 'Tabela de artilheiros da Copa 2026 ao vivo: quem lidera a Chuteira de Ouro, com gols por jogador e seleção. Atualiza sozinho.', h1: 'Artilheiros da Copa 2026', intro: 'Quem está ganhando a Chuteira de Ouro. Atualiza automaticamente com os gols reais.', player: 'Jogador', team: 'Seleção', goals: 'Gols', empty: 'Ainda não há artilheiros. Volte quando os gols rolarem.' },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'ItemList',
+  name: C.h1, url: `${site}/${lang}/goleadores/`, numberOfItems: scorers.length,
+  itemListElement: scorers.slice(0, 25).map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: `${s.name} (${teamName(s.team, lang)})` })),
+};
+---
+<Base lang={lang} title={C.title} description={C.desc} path="goleadores/" active="scorers" jsonLd={jsonLd}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  {scorers.length === 0 ? (
+    <p class="cal-badge">{C.empty}</p>
+  ) : (
+    <div style="background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:680px;margin:0 auto">
+      <table class="stand">
+        <thead><tr><th class="teamh">{C.player}</th><th style="text-align:left">{C.team}</th><th>{C.goals}</th></tr></thead>
+        <tbody>
+          {scorers.map((s, idx) => (
+            <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''}>
+              <td class="team"><div class="row"><span class="pos">{idx + 1}</span>{s.name}</div></td>
+              <td style="text-align:left">
+                <a href={teamUrl(lang, s.team)} style="display:inline-flex;align-items:center;gap:7px;color:inherit">
+                  <img class="flag" loading="lazy" src={flagUrl(s.team)} alt="" />{teamName(s.team, lang)}
+                </a>
+              </td>
+              <td class="pts">{s.goals}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</Base>
