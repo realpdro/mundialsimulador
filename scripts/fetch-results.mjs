@@ -76,6 +76,9 @@ async function main() {
     const hasScore = hs !== null && hs !== undefined && as !== null && as !== undefined;
     const entry = { status: m.status, utc: m.utcDate };
     if (hasScore) { entry.scores = { [a]: hs, [b]: as }; withScore++; }
+    // Ganador (incluye prórroga/penaltis vía score.winner) — necesario para el cuadro eliminatorio.
+    const w = m.score?.winner;
+    if (w === 'HOME_TEAM') entry.winner = a; else if (w === 'AWAY_TEAM') entry.winner = b;
     if (['IN_PLAY', 'PAUSED'].includes(m.status)) { entry.live = true; live++; }
     byPair[key] = entry;
   }

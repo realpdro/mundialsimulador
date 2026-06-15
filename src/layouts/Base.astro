@@ -9,7 +9,7 @@ interface Props {
   title: string;
   description: string;
   path?: string; // sub-path after the locale, e.g. '' | 'calendario/' | 'grupos/a/'
-  active?: 'home' | 'calendar' | 'groups' | 'teams' | 'scorers' | 'qualified';
+  active?: 'home' | 'calendar' | 'groups' | 'teams' | 'scorers' | 'qualified' | 'bracket';
   ogImage?: string;
   jsonLd?: object | object[];
   breadcrumbs?: { name: string; url: string }[];
@@ -34,6 +34,7 @@ const navLinks = [
   { key: 'home', href: homeUrl(lang), label: ui.nav.home },
   { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
   { key: 'qualified', href: `/${lang}/clasificados/`, label: lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados' },
+  { key: 'bracket', href: `/${lang}/cuadro/`, label: lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro' },
   { key: 'calendar', href: calUrl(lang), label: ui.nav.calendar },
   { key: 'scorers', href: `/${lang}/goleadores/`, label: lang === 'en' ? 'Scorers' : lang === 'pt' ? 'Artilheiros' : 'Goleadores' },
 ];
@@ -101,6 +102,7 @@ const navLinks = [
         <a href={homeUrl(lang)}>{ui.nav.home}</a>
         <a href={groupsUrl(lang)}>{ui.nav.groups}</a>
         <a href={`/${lang}/clasificados/`}>{lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados'}</a>
+        <a href={`/${lang}/cuadro/`}>{lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro'}</a>
         <a href={calUrl(lang)}>{ui.nav.calendar}</a>
         <a href={`/${lang}/goleadores/`}>{lang === 'en' ? 'Scorers' : lang === 'pt' ? 'Artilheiros' : 'Goleadores'}</a>
         <a href={`/${lang}/sobre/`}>{lang === 'en' ? 'About' : 'Sobre'}</a>
