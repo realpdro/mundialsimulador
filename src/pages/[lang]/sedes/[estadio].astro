@@ -1,0 +1,78 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, roundName, spainDateLabel, spainTime, matchUrl } from '../../../lib/site';
+import { listVenues, venueBySlug, countryName } from '../../../lib/venues';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) => listVenues().map((v) => ({ params: { lang, estadio: v.slug }, props: { v } })));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const v = (Astro.props as any).v as ReturnType<typeof venueBySlug> & object;
+const country = countryName(v.iso, lang);
+
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const gms = SCHEDULE.groupStage.filter((m) => m.stadium === v.name).sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
+const kms = SCHEDULE.knockout.filter((m) => m.stadium === v.name).sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
+
+const C = {
+  es: { title: (n: string, c: string) => `${n} (${c}) — partidos del Mundial 2026`, desc: (n: string, ci: string, co: string, k: number) => `Todos los partidos del Mundial 2026 en el ${n}, en ${ci} (${co}): ${k} encuentros entre fase de grupos y eliminatorias. Fechas y horarios.`, intro: (n: string, ci: string, co: string, k: number) => `El ${n}, en ${ci} (${co}), acoge ${k} partidos del Mundial 2026. Estos son todos, con sus fechas y horarios (hora de España).`, groupH: 'Partidos de grupos', koH: 'Eliminatorias en esta sede', backAll: 'Ver todas las sedes' },
+  en: { title: (n: string, c: string) => `${n} (${c}) — 2026 World Cup matches`, desc: (n: string, ci: string, co: string, k: number) => `All 2026 World Cup matches at ${n}, in ${ci} (${co}): ${k} games across the group stage and knockouts. Dates and kickoff times.`, intro: (n: string, ci: string, co: string, k: number) => `${n}, in ${ci} (${co}), hosts ${k} matches at the 2026 World Cup. Here they all are, with dates and times (Spain time).`, groupH: 'Group-stage matches', koH: 'Knockout matches at this venue', backAll: 'See all venues' },
+  pt: { title: (n: string, c: string) => `${n} (${c}) — jogos da Copa 2026`, desc: (n: string, ci: string, co: string, k: number) => `Todos os jogos da Copa 2026 no ${n}, em ${ci} (${co}): ${k} partidas entre fase de grupos e mata-mata. Datas e horários.`, intro: (n: string, ci: string, co: string, k: number) => `O ${n}, em ${ci} (${co}), recebe ${k} jogos da Copa 2026. Estes são todos, com datas e horários (horário da Espanha).`, groupH: 'Jogos da fase de grupos', koH: 'Mata-mata nesta sede', backAll: 'Ver todas as sedes' },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'StadiumOrArena', name: v.name,
+  address: { '@type': 'PostalAddress', addressLocality: v.city, addressCountry: v.iso.toUpperCase() },
+  url: `${site}/${lang}/sedes/${v.slug}/`,
+};
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: lang === 'en' ? 'Stadiums' : lang === 'pt' ? 'Estádios' : 'Estadios', url: `/${lang}/sedes/` }, { name: v.name, url: `/${lang}/sedes/${v.slug}/` }];
+---
+<Base lang={lang} title={C.title(v.name, v.city)} description={C.desc(v.name, v.city, country, v.count)} path={`sedes/${v.slug}/`} jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={`/${lang}/sedes/`}>{lang === 'en' ? 'Stadiums' : lang === 'pt' ? 'Estádios' : 'Estadios'}</a> › {v.name}</p>
+  <div class="page-head">
+    <h1><img class="flag lg" width="30" height="21" style="display:inline-block;vertical-align:-4px;margin-right:8px" src={`/flags/${v.iso}.webp`} alt="" /> {v.name}</h1>
+    <p>{C.intro(v.name, v.city, country, v.count)}</p>
+  </div>
+
+  {gms.length > 0 && (
+    <>
+      <h2 class="section-h">{C.groupH}</h2>
+      <div class="cal-grid">
+        {gms.map((m) => {
+          const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
+          const result = a && b ? byPair[[a, b].sort().join('-')] ?? null : null;
+          return <MatchCard lang={lang} label={`${ui.common.group} ${m.group}`} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} result={result} previewHref={matchUrl(lang, m)} />;
+        })}
+      </div>
+    </>
+  )}
+
+  {kms.length > 0 && (
+    <>
+      <h2 class="section-h">{C.koH}</h2>
+      <div class="kolist">
+        {kms.map((m) => (
+          <a class="koline" href={`/${lang}/cuadro/`}>
+            <b>{roundName(lang, m.round)}</b>
+            <span>{spainDateLabel(m.koSpain, m.date, lang)}{m.koSpain ? ` · ${spainTime(m.koSpain)}h` : ''}</span>
+          </a>
+        ))}
+      </div>
+    </>
+  )}
+
+  <p style="text-align:center;margin-top:24px"><a class="btn" href={`/${lang}/sedes/`}>{C.backAll}</a></p>
+</Base>
+
+<style>
+  .kolist { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+  .koline { display:flex; justify-content:space-between; align-items:center; gap:10px; background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:11px; padding:11px 14px; color:inherit; }
+  .koline:hover { border-color:var(--accent); }
+  .koline span { color:var(--muted2); font-size:13px; text-align:right; }
+</style>

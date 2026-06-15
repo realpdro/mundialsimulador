@@ -1,0 +1,51 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl } from '../../../lib/site';
+import { listVenues, countryName } from '../../../lib/venues';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const venues = listVenues();
+
+const C = {
+  es: { title: 'Estadios y sedes del Mundial 2026 — las 16 sedes y sus partidos', desc: 'Las 16 sedes del Mundial 2026 en Estados Unidos, México y Canadá: cada estadio, su ciudad y cuántos partidos acoge. Calendario por estadio.', h1: 'Estadios del Mundial 2026', intro: 'El Mundial 2026 se juega en 16 sedes de tres países: Estados Unidos (11), México (3) y Canadá (2). Entra en cada estadio para ver todos sus partidos.', matches: 'partidos', see: 'Ver partidos' },
+  en: { title: '2026 World Cup stadiums & host cities — all 16 venues and their matches', desc: 'The 16 venues of the 2026 World Cup across the United States, Mexico and Canada: each stadium, its city and how many matches it hosts. Schedule by stadium.', h1: '2026 World Cup stadiums', intro: 'The 2026 World Cup is played at 16 venues across three countries: the United States (11), Mexico (3) and Canada (2). Open each stadium to see all its matches.', matches: 'matches', see: 'See matches' },
+  pt: { title: 'Estádios e sedes da Copa 2026 — as 16 sedes e seus jogos', desc: 'As 16 sedes da Copa 2026 nos Estados Unidos, México e Canadá: cada estádio, sua cidade e quantos jogos recebe. Calendário por estádio.', h1: 'Estádios da Copa 2026', intro: 'A Copa 2026 é disputada em 16 sedes de três países: Estados Unidos (11), México (3) e Canadá (2). Entre em cada estádio para ver todos os seus jogos.', matches: 'jogos', see: 'Ver jogos' },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'ItemList', name: C.h1, url: `${site}/${lang}/sedes/`, numberOfItems: venues.length,
+  itemListElement: venues.map((v, i) => ({ '@type': 'ListItem', position: i + 1, name: `${v.name} (${v.city})` })),
+};
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: C.h1, url: `/${lang}/sedes/` }];
+---
+<Base lang={lang} title={C.title} description={C.desc} path="sedes/" jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  <div class="vgrid">
+    {venues.map((v) => (
+      <a class="vcard" href={`/${lang}/sedes/${v.slug}/`}>
+        <div class="vtop"><img class="flag" width="23" height="16" loading="lazy" src={`/flags/${v.iso}.webp`} alt="" /><span class="vco">{countryName(v.iso, lang)}</span></div>
+        <b class="vname">{v.name}</b>
+        <span class="vcity">{v.city}</span>
+        <span class="vn">{v.count} {C.matches}</span>
+      </a>
+    ))}
+  </div>
+</Base>
+
+<style>
+  .vgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .vcard { display:flex; flex-direction:column; gap:3px; background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:13px; padding:14px 15px; color:inherit; }
+  .vcard:hover { border-color:var(--accent); }
+  .vtop { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+  .vco { font-size:12px; color:var(--muted2); }
+  .vname { font-size:16px; line-height:1.25; }
+  .vcity { color:var(--muted2); font-size:13.5px; }
+  .vn { margin-top:6px; font-size:12.5px; font-weight:700; color:var(--accent); }
+</style>

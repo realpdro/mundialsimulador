@@ -1,0 +1,113 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, groupsUrl } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+
+const C = {
+  es: {
+    title: 'Formato del Mundial 2026: cómo funciona (48 selecciones explicadas)',
+    desc: 'Cómo funciona el Mundial 2026 con 48 selecciones: 12 grupos, quién se clasifica (2 primeros + 8 mejores terceros), criterios de desempate y fase eliminatoria. Explicado claro.',
+    h1: 'Formato del Mundial 2026: cómo funciona',
+    intro: 'El Mundial 2026 estrena un formato nuevo con 48 selecciones, el mayor de la historia. Aquí te lo explicamos paso a paso: cómo son los grupos, quién pasa de ronda, cómo se desempata y cómo es el cuadro hasta la final.',
+    sections: [
+      { h: '48 selecciones en 12 grupos', p: 'Por primera vez participan 48 selecciones (frente a las 32 anteriores). Se reparten en 12 grupos de 4 equipos (A a L). Cada selección juega 3 partidos en la fase de grupos. En total son 104 partidos, del 11 de junio al 19 de julio de 2026, repartidos entre Estados Unidos, México y Canadá.' },
+      { h: 'Quién se clasifica a la fase eliminatoria', p: 'Avanzan los 2 primeros de cada grupo (24 selecciones) más los 8 mejores terceros de los 12 grupos. En total, 32 selecciones pasan a los dieciseisavos de final. Por eso los terceros importan tanto: quedar tercero no elimina, hay que estar entre los 8 mejores.', list: ['1.º de cada grupo → clasificado (12 equipos)', '2.º de cada grupo → clasificado (12 equipos)', '8 mejores terceros (de 12) → clasificados', 'Total: 32 selecciones a eliminatorias'] },
+      { h: 'Criterios de desempate en un grupo', p: 'Si dos o más selecciones acaban con los mismos puntos, se aplican estos criterios por orden:', list: ['Mayor diferencia de goles en el grupo', 'Mayor número de goles a favor en el grupo', 'Puntos en los enfrentamientos directos entre los empatados', 'Diferencia de goles en esos enfrentamientos directos', 'Goles a favor en esos enfrentamientos directos', 'Puntos de juego limpio (tarjetas)', 'Sorteo'] },
+      { h: 'La fase eliminatoria', p: 'Desde dieciseisavos todo es a partido único: quien pierde, fuera (con prórroga y penaltis si hace falta). El camino es dieciseisavos (32) → octavos (16) → cuartos (8) → semifinales (4) → final. Los perdedores de semifinales juegan el partido por el tercer puesto.' },
+    ],
+    faqH: 'Preguntas frecuentes',
+    faq: [
+      { q: '¿Cuántas selecciones juegan el Mundial 2026?', a: '48 selecciones, repartidas en 12 grupos de 4. Es el primer Mundial con 48 equipos.' },
+      { q: '¿Cuántos equipos pasan de cada grupo?', a: 'Pasan los 2 primeros de cada grupo. Además se clasifican los 8 mejores terceros de los 12 grupos.' },
+      { q: '¿Qué pasa si quedo tercero en el grupo?', a: 'Quedar tercero no elimina automáticamente: los 8 mejores terceros (de 12) también se clasifican a dieciseisavos.' },
+      { q: '¿Cuántos partidos tiene el Mundial 2026?', a: '104 partidos en total, del 11 de junio al 19 de julio de 2026, en Estados Unidos, México y Canadá.' },
+    ],
+    cta: 'Ver los grupos',
+  },
+  en: {
+    title: '2026 World Cup format: how it works (48 teams explained)',
+    desc: 'How the 2026 World Cup works with 48 teams: 12 groups, who qualifies (top 2 + 8 best third-placed), tie-breakers and the knockout stage. Clearly explained.',
+    h1: '2026 World Cup format: how it works',
+    intro: 'The 2026 World Cup debuts a new 48-team format, the largest in history. Here is a step-by-step explainer: how the groups work, who advances, how ties are broken and what the bracket looks like up to the final.',
+    sections: [
+      { h: '48 teams in 12 groups', p: 'For the first time, 48 teams take part (up from 32). They are split into 12 groups of 4 (A to L). Each team plays 3 group-stage matches. There are 104 matches in total, from 11 June to 19 July 2026, across the United States, Mexico and Canada.' },
+      { h: 'Who qualifies for the knockout stage', p: 'The top 2 of each group (24 teams) advance, plus the 8 best third-placed teams out of the 12 groups. In total, 32 teams reach the round of 32. That is why third place matters so much: finishing third does not eliminate you — you must be among the best 8.', list: ['1st in each group → through (12 teams)', '2nd in each group → through (12 teams)', '8 best third-placed (of 12) → through', 'Total: 32 teams into the knockouts'] },
+      { h: 'Group tie-breakers', p: 'If two or more teams finish level on points, these criteria apply in order:', list: ['Higher goal difference in the group', 'More goals scored in the group', 'Points in the head-to-head matches between the tied teams', 'Goal difference in those head-to-head matches', 'Goals scored in those head-to-head matches', 'Fair-play points (cards)', 'Drawing of lots'] },
+      { h: 'The knockout stage', p: 'From the round of 32 it is single-elimination: lose and you are out (with extra time and penalties if needed). The path is round of 32 → round of 16 → quarter-finals → semi-finals → final. The losing semi-finalists play the third-place match.' },
+    ],
+    faqH: 'FAQ',
+    faq: [
+      { q: 'How many teams play the 2026 World Cup?', a: '48 teams, split into 12 groups of 4. It is the first World Cup with 48 teams.' },
+      { q: 'How many teams advance from each group?', a: 'The top 2 of each group advance. In addition, the 8 best third-placed teams out of 12 also qualify.' },
+      { q: 'What happens if a team finishes third?', a: 'Finishing third does not mean automatic elimination: the 8 best third-placed teams (of 12) also reach the round of 32.' },
+      { q: 'How many matches are there at the 2026 World Cup?', a: '104 matches in total, from 11 June to 19 July 2026, across the United States, Mexico and Canada.' },
+    ],
+    cta: 'See the groups',
+  },
+  pt: {
+    title: 'Formato da Copa 2026: como funciona (48 seleções explicadas)',
+    desc: 'Como funciona a Copa 2026 com 48 seleções: 12 grupos, quem se classifica (2 primeiros + 8 melhores terceiros), critérios de desempate e mata-mata. Explicado de forma clara.',
+    h1: 'Formato da Copa 2026: como funciona',
+    intro: 'A Copa 2026 estreia um novo formato com 48 seleções, o maior da história. Aqui explicamos passo a passo: como são os grupos, quem avança, como se desempata e como é o chaveamento até a final.',
+    sections: [
+      { h: '48 seleções em 12 grupos', p: 'Pela primeira vez participam 48 seleções (antes eram 32). Ficam divididas em 12 grupos de 4 (A a L). Cada seleção joga 3 partidas na fase de grupos. São 104 jogos no total, de 11 de junho a 19 de julho de 2026, entre Estados Unidos, México e Canadá.' },
+      { h: 'Quem se classifica ao mata-mata', p: 'Avançam os 2 primeiros de cada grupo (24 seleções) mais os 8 melhores terceiros dos 12 grupos. No total, 32 seleções chegam aos 16-avos de final. Por isso o terceiro lugar importa tanto: ficar em terceiro não elimina — é preciso estar entre os 8 melhores.', list: ['1.º de cada grupo → classificado (12)', '2.º de cada grupo → classificado (12)', '8 melhores terceiros (de 12) → classificados', 'Total: 32 seleções no mata-mata'] },
+      { h: 'Critérios de desempate no grupo', p: 'Se duas ou mais seleções terminam com os mesmos pontos, valem estes critérios em ordem:', list: ['Maior saldo de gols no grupo', 'Mais gols marcados no grupo', 'Pontos no confronto direto entre os empatados', 'Saldo de gols nesses confrontos diretos', 'Gols marcados nesses confrontos diretos', 'Pontos de fair play (cartões)', 'Sorteio'] },
+      { h: 'O mata-mata', p: 'A partir dos 16-avos é eliminatória simples: quem perde, está fora (com prorrogação e pênaltis se necessário). O caminho é 16-avos → oitavas → quartas → semifinais → final. Os perdedores das semifinais disputam o terceiro lugar.' },
+    ],
+    faqH: 'Perguntas frequentes',
+    faq: [
+      { q: 'Quantas seleções jogam a Copa 2026?', a: '48 seleções, divididas em 12 grupos de 4. É a primeira Copa com 48 equipes.' },
+      { q: 'Quantas equipes avançam de cada grupo?', a: 'Avançam os 2 primeiros de cada grupo. Além disso, classificam-se os 8 melhores terceiros dos 12 grupos.' },
+      { q: 'O que acontece se terminar em terceiro?', a: 'Ficar em terceiro não significa eliminação automática: os 8 melhores terceiros (de 12) também chegam aos 16-avos.' },
+      { q: 'Quantos jogos tem a Copa 2026?', a: '104 jogos no total, de 11 de junho a 19 de julho de 2026, nos Estados Unidos, México e Canadá.' },
+    ],
+    cta: 'Ver os grupos',
+  },
+}[lang];
+
+const jsonLd = {
+  '@context': 'https://schema.org', '@type': 'FAQPage',
+  mainEntity: C.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+};
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: C.h1, url: `/${lang}/formato/` }];
+---
+<Base lang={lang} title={C.title} description={C.desc} path="formato/" jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+
+  {C.sections.map((s) => (
+    <section class="fmt">
+      <h2 class="section-h">{s.h}</h2>
+      <p>{s.p}</p>
+      {s.list && <ul class="fmt-list">{s.list.map((li) => <li>{li}</li>)}</ul>}
+    </section>
+  ))}
+
+  <h2 class="section-h">{C.faqH}</h2>
+  <div class="fmt-faq">
+    {C.faq.map((f) => (
+      <div class="qa"><h3>{f.q}</h3><p>{f.a}</p></div>
+    ))}
+  </div>
+
+  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={groupsUrl(lang)}>{C.cta}</a></p>
+</Base>
+
+<style>
+  .fmt { max-width:720px; }
+  .fmt p { color:var(--text); line-height:1.6; }
+  .fmt-list { max-width:720px; margin:10px 0 0; padding-left:0; list-style:none; }
+  .fmt-list li { position:relative; padding:7px 0 7px 26px; border-bottom:1px solid var(--line); color:var(--text); }
+  .fmt-list li::before { content:'✓'; position:absolute; left:2px; color:var(--green); font-weight:800; }
+  .fmt-faq { max-width:720px; }
+  .qa { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 16px; margin-bottom:10px; }
+  .qa h3 { margin:0 0 6px; font-size:1rem; }
+  .qa p { margin:0; color:var(--muted2); line-height:1.55; }
+</style>
