@@ -1,0 +1,144 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, groupsUrl } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+
+// Nombres de país por idioma (incluye sedes históricas y campeones).
+const CN: Record<string, Record<Lang, string>> = {
+  uru: { es: 'Uruguay', en: 'Uruguay', pt: 'Uruguai' }, arg: { es: 'Argentina', en: 'Argentina', pt: 'Argentina' },
+  ita: { es: 'Italia', en: 'Italy', pt: 'Itália' }, tch: { es: 'Checoslovaquia', en: 'Czechoslovakia', pt: 'Tchecoslováquia' },
+  hun: { es: 'Hungría', en: 'Hungary', pt: 'Hungria' }, rfa: { es: 'Alemania (RFA)', en: 'West Germany', pt: 'Alemanha (RFA)' },
+  ger: { es: 'Alemania', en: 'Germany', pt: 'Alemanha' }, bra: { es: 'Brasil', en: 'Brazil', pt: 'Brasil' },
+  swe: { es: 'Suecia', en: 'Sweden', pt: 'Suécia' }, eng: { es: 'Inglaterra', en: 'England', pt: 'Inglaterra' },
+  ned: { es: 'Países Bajos', en: 'Netherlands', pt: 'Países Baixos' }, fra: { es: 'Francia', en: 'France', pt: 'França' },
+  esp: { es: 'España', en: 'Spain', pt: 'Espanha' }, cro: { es: 'Croacia', en: 'Croatia', pt: 'Croácia' },
+  sui: { es: 'Suiza', en: 'Switzerland', pt: 'Suíça' }, chi: { es: 'Chile', en: 'Chile', pt: 'Chile' },
+  mex: { es: 'México', en: 'Mexico', pt: 'México' }, usa: { es: 'Estados Unidos', en: 'United States', pt: 'Estados Unidos' },
+  kor: { es: 'Corea/Japón', en: 'Korea/Japan', pt: 'Coreia/Japão' }, rsa: { es: 'Sudáfrica', en: 'South Africa', pt: 'África do Sul' },
+  rus: { es: 'Rusia', en: 'Russia', pt: 'Rússia' }, qat: { es: 'Catar', en: 'Qatar', pt: 'Catar' },
+};
+const N = (k: string) => CN[k]?.[lang] ?? k;
+
+const CHAMPS = [
+  { y: 1930, host: 'uru', c: 'uru', r: 'arg', s: '4-2' }, { y: 1934, host: 'ita', c: 'ita', r: 'tch', s: '2-1' },
+  { y: 1938, host: 'fra', c: 'ita', r: 'hun', s: '4-2' }, { y: 1950, host: 'bra', c: 'uru', r: 'bra', s: '2-1' },
+  { y: 1954, host: 'sui', c: 'rfa', r: 'hun', s: '3-2' }, { y: 1958, host: 'swe', c: 'bra', r: 'swe', s: '5-2' },
+  { y: 1962, host: 'chi', c: 'bra', r: 'tch', s: '3-1' }, { y: 1966, host: 'eng', c: 'eng', r: 'rfa', s: '4-2' },
+  { y: 1970, host: 'mex', c: 'bra', r: 'ita', s: '4-1' }, { y: 1974, host: 'rfa', c: 'rfa', r: 'ned', s: '2-1' },
+  { y: 1978, host: 'arg', c: 'arg', r: 'ned', s: '3-1' }, { y: 1982, host: 'esp', c: 'ita', r: 'rfa', s: '3-1' },
+  { y: 1986, host: 'mex', c: 'arg', r: 'rfa', s: '3-2' }, { y: 1990, host: 'ita', c: 'rfa', r: 'arg', s: '1-0' },
+  { y: 1994, host: 'usa', c: 'bra', r: 'ita', s: '0-0 (3-2 p)' }, { y: 1998, host: 'fra', c: 'fra', r: 'bra', s: '3-0' },
+  { y: 2002, host: 'kor', c: 'bra', r: 'ger', s: '2-0' }, { y: 2006, host: 'ger', c: 'ita', r: 'fra', s: '1-1 (5-3 p)' },
+  { y: 2010, host: 'rsa', c: 'esp', r: 'ned', s: '1-0' }, { y: 2014, host: 'bra', c: 'ger', r: 'arg', s: '1-0' },
+  { y: 2018, host: 'rus', c: 'fra', r: 'cro', s: '4-2' }, { y: 2022, host: 'qat', c: 'arg', r: 'fra', s: '3-3 (4-2 p)' },
+].reverse();
+
+const titleCount: Record<string, number> = {};
+for (const c of CHAMPS) { const k = c.c === 'rfa' ? 'ger' : c.c; titleCount[k] = (titleCount[k] || 0) + 1; }
+const titles = Object.entries(titleCount).sort((a, b) => b[1] - a[1] || N(a[0]).localeCompare(N(b[0])));
+
+const SCORERS = [
+  { n: 'Miroslav Klose', t: 'ger', g: 16 }, { n: 'Ronaldo Nazário', t: 'bra', g: 15 }, { n: 'Gerd Müller', t: 'rfa', g: 14 },
+  { n: 'Just Fontaine', t: 'fra', g: 13 }, { n: 'Lionel Messi', t: 'arg', g: 13 }, { n: 'Pelé', t: 'bra', g: 12 }, { n: 'Kylian Mbappé', t: 'fra', g: 12 },
+];
+
+const C = {
+  es: { title: 'Palmarés del Mundial: todos los campeones (1930-2022) y récords', desc: 'Todos los campeones del Mundial de 1930 a 2022, selecciones con más títulos y máximos goleadores históricos. Palmarés completo de la Copa del Mundo.', h1: 'Palmarés del Mundial', intro: 'Todos los campeones del Mundial desde 1930, las selecciones con más títulos y los máximos goleadores de la historia. Datos para entender quién manda antes del Mundial 2026.', champsH: 'Todos los campeones (1930-2022)', year: 'Año', host: 'Sede', champ: 'Campeón', runner: 'Subcampeón', result: 'Final', titlesH: 'Selecciones con más títulos', titlesC: 'títulos', scorersH: 'Máximos goleadores históricos', scorersNote: 'Goles totales en fases finales del Mundial (tras 2022).', player: 'Jugador', goals: 'Goles', faqH: 'Preguntas frecuentes', cta: 'Simular el Mundial 2026' },
+  en: { title: 'World Cup roll of honour: all champions (1930-2022) and records', desc: 'Every World Cup champion from 1930 to 2022, nations with the most titles and the all-time top scorers. The complete World Cup honours list.', h1: 'World Cup roll of honour', intro: 'Every World Cup champion since 1930, the nations with the most titles and the all-time top scorers. The context to know who rules before the 2026 World Cup.', champsH: 'All champions (1930-2022)', year: 'Year', host: 'Host', champ: 'Champion', runner: 'Runner-up', result: 'Final', titlesH: 'Nations with the most titles', titlesC: 'titles', scorersH: 'All-time top scorers', scorersNote: 'Total goals at World Cup finals (after 2022).', player: 'Player', goals: 'Goals', faqH: 'FAQ', cta: 'Simulate the 2026 World Cup' },
+  pt: { title: 'Palmarés da Copa: todos os campeões (1930-2022) e recordes', desc: 'Todos os campeões da Copa do Mundo de 1930 a 2022, seleções com mais títulos e maiores artilheiros da história. Palmarés completo da Copa.', h1: 'Palmarés da Copa do Mundo', intro: 'Todos os campeões da Copa desde 1930, as seleções com mais títulos e os maiores artilheiros da história. O contexto para saber quem manda antes da Copa 2026.', champsH: 'Todos os campeões (1930-2022)', year: 'Ano', host: 'Sede', champ: 'Campeão', runner: 'Vice', result: 'Final', titlesH: 'Seleções com mais títulos', titlesC: 'títulos', scorersH: 'Maiores artilheiros da história', scorersNote: 'Gols totais em Copas do Mundo (após 2022).', player: 'Jogador', goals: 'Gols', faqH: 'Perguntas frequentes', cta: 'Simular a Copa 2026' },
+}[lang];
+
+const faq = {
+  es: [
+    { q: '¿Qué selección tiene más Mundiales?', a: 'Brasil, con 5 títulos (1958, 1962, 1970, 1994 y 2002).' },
+    { q: '¿Quién es el máximo goleador histórico del Mundial?', a: 'Miroslav Klose (Alemania), con 16 goles en fases finales.' },
+    { q: '¿Cuántos Mundiales ha ganado España?', a: 'Uno, en 2010, ganando la final a Países Bajos (1-0).' },
+    { q: '¿Cuántas veces ha ganado Argentina el Mundial?', a: 'Tres veces: 1978, 1986 y 2022.' },
+  ],
+  en: [
+    { q: 'Which nation has won the most World Cups?', a: 'Brazil, with 5 titles (1958, 1962, 1970, 1994 and 2002).' },
+    { q: 'Who is the all-time top scorer at the World Cup?', a: 'Miroslav Klose (Germany), with 16 goals at World Cup finals.' },
+    { q: 'How many World Cups has Spain won?', a: 'One, in 2010, beating the Netherlands in the final (1-0).' },
+    { q: 'How many times has Argentina won the World Cup?', a: 'Three times: 1978, 1986 and 2022.' },
+  ],
+  pt: [
+    { q: 'Qual seleção tem mais Copas do Mundo?', a: 'O Brasil, com 5 títulos (1958, 1962, 1970, 1994 e 2002).' },
+    { q: 'Quem é o maior artilheiro da história da Copa?', a: 'Miroslav Klose (Alemanha), com 16 gols em Copas do Mundo.' },
+    { q: 'Quantas Copas a Espanha ganhou?', a: 'Uma, em 2010, vencendo a final contra a Holanda (1-0).' },
+    { q: 'Quantas vezes a Argentina ganhou a Copa?', a: 'Três vezes: 1978, 1986 e 2022.' },
+  ],
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: C.h1, url: `/${lang}/palmares/` }];
+---
+<Base lang={lang} title={C.title} description={C.desc} path="palmares/" jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+
+  <h2 class="section-h">🏆 {C.titlesH}</h2>
+  <div class="trophies">
+    {titles.map(([k, n]) => (
+      <div class="trophy-card"><b class="tn">{n}</b><span>{N(k)}</span><span class="tc">{C.titlesC}</span></div>
+    ))}
+  </div>
+
+  <h2 class="section-h">{C.champsH}</h2>
+  <div class="tw">
+    <table class="rec">
+      <thead><tr><th>{C.year}</th><th>{C.champ}</th><th class="hidem">{C.result}</th><th>{C.runner}</th><th class="hidem">{C.host}</th></tr></thead>
+      <tbody>
+        {CHAMPS.map((m) => (
+          <tr><td><b>{m.y}</b></td><td class="win">{N(m.c)}</td><td class="hidem sc">{m.s}</td><td>{N(m.r)}</td><td class="hidem host">{N(m.host)}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-h">⚽ {C.scorersH}</h2>
+  <p class="note">{C.scorersNote}</p>
+  <div class="tw" style="max-width:520px">
+    <table class="rec">
+      <thead><tr><th>#</th><th>{C.player}</th><th>{C.goals}</th></tr></thead>
+      <tbody>
+        {SCORERS.map((s, i) => (
+          <tr class={i === 0 ? 'win' : ''}><td>{i + 1}</td><td>{s.n} <span class="host">· {N(s.t)}</span></td><td class="sc"><b>{s.g}</b></td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-h">{C.faqH}</h2>
+  <div class="faqs">{faq.map((f) => (<div class="qa"><h3>{f.q}</h3><p>{f.a}</p></div>))}</div>
+
+  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={homeUrl(lang)}>{C.cta}</a></p>
+</Base>
+
+<style>
+  .trophies { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:8px; }
+  .trophy-card { display:flex; flex-direction:column; background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .trophy-card .tn { font-size:30px; line-height:1; color:var(--accent); }
+  .trophy-card span { color:var(--text); font-weight:600; margin-top:3px; }
+  .trophy-card .tc { color:var(--muted2); font-weight:400; font-size:12px; margin-top:0; }
+  .tw { background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line); border-radius:14px; overflow:hidden; max-width:720px; margin:0 auto 8px; }
+  table.rec { width:100%; border-collapse:collapse; font-size:14px; }
+  table.rec th { background:rgba(255,255,255,.03); color:var(--muted2); font-weight:700; text-align:left; padding:9px 12px; font-size:12px; text-transform:uppercase; letter-spacing:.3px; }
+  table.rec td { padding:9px 12px; border-top:1px solid var(--line); }
+  table.rec td.win { color:var(--green); font-weight:700; }
+  table.rec td.sc { font-variant-numeric:tabular-nums; color:var(--muted2); }
+  table.rec td.host { color:var(--muted2); }
+  table.rec tr.win td { background:rgba(34,197,94,.06); }
+  .note { font-size:13px; color:var(--muted2); margin:-6px 2px 10px; max-width:520px; }
+  .faqs { max-width:720px; }
+  .qa { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 16px; margin-bottom:10px; }
+  .qa h3 { margin:0 0 6px; font-size:1rem; }
+  .qa p { margin:0; color:var(--muted2); line-height:1.55; }
+  @media(max-width:560px){ .hidem{ display:none; } }
+</style>
