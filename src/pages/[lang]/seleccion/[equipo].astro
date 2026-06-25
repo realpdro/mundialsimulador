@@ -2,7 +2,10 @@
 import Base from '../../../layouts/Base.astro';
 import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, SLUG_TO_CODE, TEAMS, teamName, flagUrl } from '../../../data/tournament';
 import { UI } from '../../../i18n/ui';
-import { homeUrl, groupsUrl, groupUrl, teamUrl, spainDateLabel, spainTime, overnightNote, matchUrl } from '../../../lib/site';
+import { homeUrl, groupsUrl, groupUrl, teamUrl, spainDateLabel, spainTime, overnightNote, matchUrl, roundName, koMatchUrl } from '../../../lib/site';
+import { resolveBracket } from '../../../lib/bracket';
+import { realStandings } from '../../../lib/standings';
+import { computeQualification } from '../../../lib/qualification';
 import RESULTS from '../../../data/results.json';
 import MatchCard from '../../../components/MatchCard.astro';
 
@@ -25,16 +28,70 @@ const fixtures = SCHEDULE.groupStage
 const teamScorers = (((RESULTS as any).scorers || []) as any[]).filter((s) => s.team === code);
 const GOL = { es: 'Goleadores', en: 'Top scorers', pt: 'Artilheiros' }[lang];
 
+// Datos en vivo del equipo: próximo partido (grupo o KO), partidos de eliminatorias,
+// máximo goleador y estado de clasificación. Todo desde resultados reales + bracket.ts.
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const B = resolveBracket(byPair, lang);
+const KO = Object.fromEntries(SCHEDULE.knockout.map((k) => [k.matchNo, k]));
+const koFixtures = B.rounds.flatMap((r) => r.matches.filter((m) => m.a.code === code || m.b.code === code).map((m) => ({ m, round: r.round, ko: KO[m.m] as any })));
+
+type Fx = { date: string; koSpain: string | null; opp: string; stadium: string; city: string; href: string | null; result: any };
+const groupFx: Fx[] = fixtures.map((mm) => {
+  const a = ES_NAME_TO_CODE[mm.teamA], b = ES_NAME_TO_CODE[mm.teamB];
+  const oppCode = a === code ? b : a;
+  return { date: mm.koSpain || mm.date, koSpain: mm.koSpain, opp: teamName(oppCode, lang), stadium: mm.stadium, city: mm.city, href: matchUrl(lang, mm), result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null };
+});
+const koFx: Fx[] = koFixtures.map((f) => {
+  const oppSide = f.m.a.code === code ? f.m.b : f.m.a;
+  return { date: f.ko?.koSpain || f.ko?.date || '', koSpain: f.ko?.koSpain ?? null, opp: oppSide.code ? teamName(oppSide.code, lang) : oppSide.label, stadium: f.ko?.stadium ?? '', city: f.ko?.city ?? '', href: koMatchUrl(lang, f.m.m), result: f.m.a.code && f.m.b.code ? byPair[[f.m.a.code, f.m.b.code].sort().join('-')] ?? null : null };
+});
+const allFx = [...groupFx, ...koFx].sort((x, y) => x.date.localeCompare(y.date));
+const next = allFx.find((f) => !(f.result?.scores)) ?? null;
+const played = allFx.some((f) => f.result?.scores);
+const day = next ? spainDateLabel(next.koSpain, (next.date || '').slice(0, 10), lang) : '';
+const time = next ? spainTime(next.koSpain) : '';
+
+const topScorer = [...teamScorers].sort((a, b) => b.goals - a.goals)[0] ?? null;
+const st = realStandings(L, byPair);
+const pos = st.order.findIndex((s) => s.code === code) + 1;
+const myStat = st.order.find((s) => s.code === code)!;
+const groupComplete = st.played === 6;
+const Q = computeQualification(byPair);
+const qualified = Q.qualifiedCodes.includes(code);
+const eliminated = groupComplete && !qualified && (pos === 4 || (pos === 3 && Q.allGroupsComplete));
+const ord = (n: number) => (n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`);
+const qualAns = {
+  es: qualified ? `Sí, ${name} está clasificada para la fase eliminatoria.` : eliminated ? `${name} ha quedado eliminada en la fase de grupos.` : groupComplete ? `${name} terminó ${pos}.º en el Grupo ${L}; pendiente de los mejores terceros.` : `Aún no está decidido: ${name} va ${pos}.º en el Grupo ${L} con ${myStat.pts} ${myStat.pts === 1 ? 'punto' : 'puntos'}.`,
+  en: qualified ? `Yes, ${name} has qualified for the knockout stage.` : eliminated ? `${name} were eliminated in the group stage.` : groupComplete ? `${name} finished ${ord(pos)} in Group ${L}; awaiting the best third-placed teams.` : `Not decided yet: ${name} are ${ord(pos)} in Group ${L} with ${myStat.pts} ${myStat.pts === 1 ? 'point' : 'points'}.`,
+  pt: qualified ? `Sim, ${name} está classificada para o mata-mata.` : eliminated ? `${name} foi eliminada na fase de grupos.` : groupComplete ? `${name} terminou em ${pos}.º no Grupo ${L}; aguardando os melhores terceiros.` : `Ainda não decidido: ${name} está em ${pos}.º no Grupo ${L} com ${myStat.pts} ${myStat.pts === 1 ? 'ponto' : 'pontos'}.`,
+}[lang];
+
+const C = {
+  es: { nextH: '⏱️ Próximo partido', nextLine: next ? `El próximo partido de ${name} es contra ${next.opp}, el ${day} a las ${time}h (hora de España)${next.stadium ? `, en ${next.stadium} (${next.city})` : ''}.` : `${name} ya no tiene más partidos en el Mundial 2026.`, seeMatch: 'Ver el partido →', koH: '🏆 Partidos de eliminatorias', faqH: 'Preguntas frecuentes', topScorerLine: topScorer ? `El máximo goleador de ${name} en el torneo es ${topScorer.name}, con ${topScorer.goals} ${topScorer.goals === 1 ? 'gol' : 'goles'}.` : '' },
+  en: { nextH: '⏱️ Next match', nextLine: next ? `${name}'s next match is against ${next.opp}, on ${day} at ${time} (Spain time)${next.stadium ? `, at ${next.stadium} (${next.city})` : ''}.` : `${name} have no more matches at the 2026 World Cup.`, seeMatch: 'See the match →', koH: '🏆 Knockout matches', faqH: 'FAQ', topScorerLine: topScorer ? `${name}'s top scorer in the tournament is ${topScorer.name}, with ${topScorer.goals} ${topScorer.goals === 1 ? 'goal' : 'goals'}.` : '' },
+  pt: { nextH: '⏱️ Próximo jogo', nextLine: next ? `O próximo jogo de ${name} é contra ${next.opp}, em ${day} às ${time} (horário da Espanha)${next.stadium ? `, em ${next.stadium} (${next.city})` : ''}.` : `${name} não tem mais jogos na Copa 2026.`, seeMatch: 'Ver o jogo →', koH: '🏆 Jogos do mata-mata', faqH: 'Perguntas frequentes', topScorerLine: topScorer ? `O artilheiro de ${name} no torneio é ${topScorer.name}, com ${topScorer.goals} ${topScorer.goals === 1 ? 'gol' : 'gols'}.` : '' },
+}[lang];
+
+const faq = [
+  { q: { es: `¿En qué grupo está ${name} en el Mundial 2026?`, en: `What group is ${name} in at the 2026 World Cup?`, pt: `Em que grupo está ${name} na Copa 2026?` }[lang], a: { es: `${name} juega en el Grupo ${L}.`, en: `${name} play in Group ${L}.`, pt: `${name} joga no Grupo ${L}.` }[lang] },
+  ...(next ? [{ q: { es: `¿Cuándo juega ${name}?`, en: `When does ${name} play next?`, pt: `Quando ${name} joga?` }[lang], a: { es: `Su próximo partido es contra ${next.opp} el ${day} a las ${time}h (hora de España).`, en: `Their next match is against ${next.opp} on ${day} at ${time} (Spain time).`, pt: `O próximo jogo é contra ${next.opp} em ${day} às ${time} (horário da Espanha).` }[lang] }] : []),
+  ...(topScorer ? [{ q: { es: `¿Quién es el máximo goleador de ${name}?`, en: `Who is ${name}'s top scorer?`, pt: `Quem é o artilheiro de ${name}?` }[lang], a: { es: `${topScorer.name}, con ${topScorer.goals} ${topScorer.goals === 1 ? 'gol' : 'goles'} en el Mundial 2026.`, en: `${topScorer.name}, with ${topScorer.goals} ${topScorer.goals === 1 ? 'goal' : 'goals'} at the 2026 World Cup.`, pt: `${topScorer.name}, com ${topScorer.goals} ${topScorer.goals === 1 ? 'gol' : 'gols'} na Copa 2026.` }[lang] }] : []),
+  { q: { es: `¿Está clasificada ${name}?`, en: `Has ${name} qualified?`, pt: `${name} está classificada?` }[lang], a: qualAns },
+];
+
+const metaTitle = played
+  ? { es: `${name} en el Mundial 2026: resultados, calendario y próximo partido`, en: `${name} at the 2026 World Cup: results, schedule and next match`, pt: `${name} na Copa 2026: resultados, calendário e próximo jogo` }[lang]
+  : ui.meta.teamTitle(name);
+
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
-const jsonLd = {
-  '@context': 'https://schema.org', '@type': 'SportsTeam', name, sport: 'Soccer',
-  url: `${site}/${lang}/seleccion/${team.slug}/`,
-  logo: `${site}/flags/${team.iso}.webp`,
-};
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'SportsTeam', name, sport: 'Soccer', url: `${site}/${lang}/seleccion/${team.slug}/`, logo: `${site}/flags/${team.iso}.webp` },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
 ---
 <Base
   lang={lang}
-  title={ui.meta.teamTitle(name)}
+  title={metaTitle}
   description={ui.team.intro(name, L)}
   path={`seleccion/${team.slug}/`}
   active="teams"
@@ -54,6 +111,12 @@ const jsonLd = {
   </div>
   <p style="text-align:center;margin-bottom:20px"><a class="btn" href={`${teamUrl(lang, code)}escenarios/`}>{ui.scenarios.link(name)}</a></p>
 
+  {next && (
+    <div style="max-width:680px;margin:0 auto 22px;background:linear-gradient(90deg,rgba(34,197,94,.1),rgba(56,189,248,.1));border:1px solid var(--line);border-radius:12px;padding:13px 16px;line-height:1.5">
+      <b>{C.nextH}</b><br />{C.nextLine} {next.href && <a href={next.href} style="color:var(--accent);font-weight:700;white-space:nowrap">{C.seeMatch}</a>}
+    </div>
+  )}
+
   <h2 class="section-h">{ui.team.fixtures}</h2>
   <div class="cal-grid">
     {fixtures.map((m) => {
@@ -63,9 +126,22 @@ const jsonLd = {
     })}
   </div>
 
+  {koFixtures.length > 0 && (
+    <>
+      <h2 class="section-h">{C.koH}</h2>
+      <div class="cal-grid">
+        {koFixtures.map((f) => {
+          const r = f.m.a.code && f.m.b.code ? byPair[[f.m.a.code, f.m.b.code].sort().join('-')] ?? null : null;
+          return <MatchCard lang={lang} label={roundName(lang, f.round)} koSpain={f.ko?.koSpain ?? null} koLocal={f.ko?.koLocal ?? null} a={f.m.a.code} b={f.m.b.code} aLabel={f.m.a.code ? null : f.m.a.label} bLabel={f.m.b.code ? null : f.m.b.label} stadium={f.ko?.stadium} city={f.ko?.city} result={r} previewHref={koMatchUrl(lang, f.m.m)} />;
+        })}
+      </div>
+    </>
+  )}
+
   {teamScorers.length > 0 && (
     <>
       <h2 class="section-h">⚽ {GOL}</h2>
+      {C.topScorerLine && <p style="text-align:center;color:var(--muted2);font-size:14px;margin:-6px 0 12px">{C.topScorerLine}</p>}
       <div class="team-grid">
         {teamScorers.map((s) => (
           <div class="team-card"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{s.name}</span><b style="color:var(--green);font-weight:800">{s.goals}</b></div>
@@ -73,6 +149,11 @@ const jsonLd = {
       </div>
     </>
   )}
+
+  <h2 class="section-h">{C.faqH}</h2>
+  <div style="max-width:680px">
+    {faq.map((f) => (<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:1rem">{f.q}</h3><p style="margin:0;color:var(--muted2)">{f.a}</p></div>))}
+  </div>
 
   <h2 class="section-h">{ui.team.rivals}</h2>
   <div class="team-grid">

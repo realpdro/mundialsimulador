@@ -1,7 +1,7 @@
 import type { Lang } from '../data/tournament';
 
 const es = {
-  htmlLang: 'es-ES',
+  htmlLang: 'es',
   brand: { title: 'Simulador Mundial 2026', tagline: 'México · EE.UU. · Canadá · 48 selecciones' },
   nav: { home: 'Simulador', calendar: 'Calendario', groups: 'Grupos', teams: 'Selecciones' },
   common: {

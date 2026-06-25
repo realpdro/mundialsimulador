@@ -70,14 +70,32 @@ const C = {
 }[lang];
 
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
-const jsonLd = {
-  '@context': 'https://schema.org', '@type': 'ItemList',
-  name: C.h1, url: `${site}/${lang}/clasificados/`, numberOfItems: qualified.length,
-  itemListElement: qualified.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: teamName(s.code, lang) })),
-};
+const faqList = {
+  es: [
+    { q: '¿Cuántos equipos pasan de la fase de grupos en el Mundial 2026?', a: 'Se clasifican 32: los 2 primeros de cada uno de los 12 grupos (24) más los 8 mejores terceros.' },
+    { q: '¿Cómo se eligen los 8 mejores terceros?', a: 'Se comparan los 12 equipos que quedan terceros por puntos, diferencia de goles y goles a favor; los 8 mejores pasan a dieciseisavos.' },
+    { q: '¿Cuándo se sabe quién se clasifica a octavos?', a: 'Al terminar los 72 partidos de la fase de grupos (28 de junio de 2026). Esta página se actualiza sola con cada resultado.' },
+  ],
+  en: [
+    { q: 'How many teams advance from the group stage at the 2026 World Cup?', a: '32 qualify: the top 2 of each of the 12 groups (24) plus the 8 best third-placed teams.' },
+    { q: 'How are the 8 best third-placed teams chosen?', a: 'The 12 third-placed teams are compared by points, goal difference and goals scored; the best 8 reach the round of 32.' },
+    { q: 'When is it known who qualifies for the round of 16?', a: 'Once the 72 group-stage matches finish (28 June 2026). This page updates automatically with every result.' },
+  ],
+  pt: [
+    { q: 'Quantas seleções avançam da fase de grupos na Copa 2026?', a: 'Classificam-se 32: os 2 primeiros de cada um dos 12 grupos (24) mais os 8 melhores terceiros.' },
+    { q: 'Como são escolhidos os 8 melhores terceiros?', a: 'Os 12 terceiros colocados são comparados por pontos, saldo de gols e gols pró; os 8 melhores vão às 16-avos.' },
+    { q: 'Quando se sabe quem se classifica?', a: 'Quando terminam os 72 jogos da fase de grupos (28 de junho de 2026). Esta página atualiza sozinha a cada resultado.' },
+  ],
+}[lang];
+const faqH = { es: 'Preguntas frecuentes', en: 'FAQ', pt: 'Perguntas frequentes' }[lang];
+const seeBracket = { es: 'Ver el cuadro de eliminatorias', en: 'See the knockout bracket', pt: 'Ver o chaveamento' }[lang];
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'ItemList', name: C.h1, url: `${site}/${lang}/clasificados/`, numberOfItems: qualified.length, itemListElement: qualified.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: teamName(s.code, lang) })) },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqList.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
 const POS = (i: number) => (i < 2 ? '#22c55e' : i === 2 ? '#f59e0b' : '#ef4444');
 ---
-<Base lang={lang} title={C.title} description={C.desc} path="clasificados/" active="qualified" jsonLd={jsonLd}>
+<Base lang={lang} title={C.title} description={C.desc} path="clasificados/" active="qualified" jsonLd={jsonLd} breadcrumbs={[{ name: ui.nav.home, url: homeUrl(lang) }, { name: C.h1, url: `/${lang}/clasificados/` }]}>
   <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
   {Q.anyPlayed && updatedAt && <p class="cal-badge">🟢 {C.live} · {C.upd} {updatedAt}h</p>}
 
@@ -137,8 +155,14 @@ const POS = (i: number) => (i < 2 ? '#22c55e' : i === 2 ? '#f59e0b' : '#ef4444')
     </div>
   )}
 
+  <h2 class="section-h">{faqH}</h2>
+  <div style="max-width:680px">
+    {faqList.map((f) => (<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:1rem">{f.q}</h3><p style="margin:0;color:var(--muted2)">{f.a}</p></div>))}
+  </div>
+
   <p style="text-align:center;margin-top:26px">
-    <a class="btn primary lg" href={groupsUrl(lang)}>{ui.nav.groups}</a>
+    <a class="btn primary lg" href={`/${lang}/cuadro/`}>{seeBracket}</a>
+    <a class="btn" href={groupsUrl(lang)} style="margin-left:8px">{ui.nav.groups}</a>
   </p>
 </Base>
 

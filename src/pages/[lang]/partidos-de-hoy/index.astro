@@ -1,0 +1,67 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, calUrl, roundName, matchUrl, koMatchUrl, formatDay } from '../../../lib/site';
+import { resolveBracket } from '../../../lib/bracket';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const koByNo: Record<number, any> = Object.fromEntries(resolveBracket(byPair, lang).rounds.flatMap((r) => r.matches.map((m) => [m.m, { ...m, round: r.round }])));
+
+// "Hoy" en hora de España, calculado en el build (el cron reconstruye a diario durante el torneo).
+const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+interface Row { koSpain: string | null; date: string; koLocal: string | null; stadium: string; city: string; label: string; ko: boolean; a: string | null; b: string | null; aLabel: string | null; bLabel: string | null; result: any; previewHref: string | null; day: string; }
+const rows: Row[] = [];
+SCHEDULE.groupStage.forEach((m) => {
+  const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
+  rows.push({ koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city, label: `${ui.common.group} ${m.group}`, ko: false, a, b, aLabel: null, bLabel: null, result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null, previewHref: matchUrl(lang, m), day: (m.koSpain || m.date).slice(0, 10) });
+});
+SCHEDULE.knockout.forEach((m) => {
+  const bm = koByNo[m.matchNo]; const a = bm?.a.code ?? null, b = bm?.b.code ?? null;
+  rows.push({ koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city, label: roundName(lang, m.round), ko: true, a, b, aLabel: a ? null : (bm?.a.label ?? null), bLabel: b ? null : (bm?.b.label ?? null), result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null, previewHref: koMatchUrl(lang, m.matchNo), day: (m.koSpain || m.date).slice(0, 10) });
+});
+rows.sort((x, y) => (x.koSpain || x.date).localeCompare(y.koSpain || y.date));
+
+let dayShown = todayMadrid;
+let today = rows.filter((r) => r.day === todayMadrid);
+const isToday = today.length > 0;
+if (!isToday) {
+  const next = rows.find((r) => r.day > todayMadrid);
+  if (next) { dayShown = next.day; today = rows.filter((r) => r.day === dayShown); }
+}
+const dayLabel = formatDay(dayShown, lang);
+
+const updatedAt = (RESULTS as any).updatedAt
+  ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
+  : null;
+
+const C = {
+  es: { title: `Partidos de hoy del Mundial 2026: horarios y resultados en directo`, desc: `Qué partidos hay hoy en el Mundial 2026, con horario (hora de España), sede y resultado en directo. Se actualiza solo.`, h1: isToday ? `Partidos de hoy · ${dayLabel}` : `No hay partidos hoy`, intro: isToday ? `Estos son los partidos del Mundial 2026 de hoy, ${dayLabel}, con su horario (hora de España), sede y marcador en directo.` : `Hoy no hay partidos del Mundial 2026. Los próximos se juegan el ${dayLabel}:`, live: 'en directo', upd: 'actualizado', noneToday: `Próximos partidos · ${dayLabel}`, toCal: 'Ver el calendario completo' },
+  en: { title: `Today's 2026 World Cup matches: kickoff times & live results`, desc: `Which 2026 World Cup matches are on today, with kickoff time (Spain time), venue and live result. Updates automatically.`, h1: isToday ? `Today's matches · ${dayLabel}` : `No matches today`, intro: isToday ? `These are today's 2026 World Cup matches, ${dayLabel}, with kickoff time (Spain time), venue and live score.` : `There are no 2026 World Cup matches today. The next ones are on ${dayLabel}:`, live: 'live', upd: 'updated', noneToday: `Next matches · ${dayLabel}`, toCal: 'See the full schedule' },
+  pt: { title: `Jogos de hoje da Copa 2026: horários e resultados ao vivo`, desc: `Quais jogos da Copa 2026 acontecem hoje, com horário (horário da Espanha), sede e resultado ao vivo. Atualiza sozinho.`, h1: isToday ? `Jogos de hoje · ${dayLabel}` : `Não há jogos hoje`, intro: isToday ? `Estes são os jogos da Copa 2026 de hoje, ${dayLabel}, com horário (horário da Espanha), sede e placar ao vivo.` : `Hoje não há jogos da Copa 2026. Os próximos são em ${dayLabel}:`, live: 'ao vivo', upd: 'atualizado', noneToday: `Próximos jogos · ${dayLabel}`, toCal: 'Ver o calendário completo' },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = { '@context': 'https://schema.org', '@type': 'ItemList', name: C.h1, url: `${site}/${lang}/partidos-de-hoy/`, numberOfItems: today.length };
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: lang === 'en' ? "Today's matches" : lang === 'pt' ? 'Jogos de hoje' : 'Partidos de hoy', url: `/${lang}/partidos-de-hoy/` }];
+---
+<Base lang={lang} title={C.title} description={C.desc} path="partidos-de-hoy/" jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  {today.some((r) => r.result?.live) && updatedAt && <p class="cal-badge">🟢 {C.live} · {C.upd} {updatedAt}h</p>}
+
+  <div class="cal-grid">
+    {today.map((m) => (
+      <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} stadium={m.stadium} city={m.city} result={m.result} previewHref={m.previewHref} />
+    ))}
+  </div>
+
+  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={calUrl(lang)}>{C.toCal}</a></p>
+</Base>

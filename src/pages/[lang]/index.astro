@@ -22,6 +22,11 @@ const jsonLd = {
   description: ui.meta.homeDesc,
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
 };
+const HUB = {
+  es: { h: 'Sigue el Mundial 2026 en directo', items: [['clasificados', '✅ Quién se clasifica'], ['cuadro', '🏆 Cuadro de eliminatorias'], ['partidos-de-hoy', '📅 Partidos de hoy'], ['goleadores', '⚽ Máximos goleadores']] },
+  en: { h: 'Follow the 2026 World Cup live', items: [['clasificados', '✅ Who qualifies'], ['cuadro', '🏆 Knockout bracket'], ['partidos-de-hoy', "📅 Today's matches"], ['goleadores', '⚽ Top scorers']] },
+  pt: { h: 'Acompanhe a Copa 2026 ao vivo', items: [['clasificados', '✅ Quem se classifica'], ['cuadro', '🏆 Chaveamento'], ['partidos-de-hoy', '📅 Jogos de hoje'], ['goleadores', '⚽ Artilheiros']] },
+}[lang];
 ---
 <Base lang={lang} title={ui.meta.homeTitle} description={ui.meta.homeDesc} path="" active="home" jsonLd={jsonLd}>
   <section class="hero">
@@ -30,6 +35,13 @@ const jsonLd = {
   </section>
 
   <Simulator lang={lang} />
+
+  <section class="prose">
+    <h2>{HUB.h}</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      {HUB.items.map(([slug, label]) => (<a href={`/${lang}/${slug}/`} style="display:block;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:inherit;font-weight:700">{label}</a>))}
+    </div>
+  </section>
 
   <section class="prose">
     <h2>{ui.groups.title}</h2>
