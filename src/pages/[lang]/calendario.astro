@@ -2,7 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE, teamName, flagUrl } from '../../data/tournament';
 import { UI } from '../../i18n/ui';
-import { formatDay, spainTime, roundName, overnightNote, matchUrl } from '../../lib/site';
+import { formatDay, spainTime, roundName, overnightNote, matchUrl, koMatchUrl } from '../../lib/site';
+import { resolveBracket } from '../../lib/bracket';
 import RESULTS from '../../data/results.json';
 import MatchCard from '../../components/MatchCard.astro';
 
@@ -19,23 +20,30 @@ const updatedAt = (RESULTS as any).updatedAt
 interface Result { status: string; utc: string; scores?: Record<string, number>; live?: boolean; }
 interface Row {
   koSpain: string | null; date: string; koLocal: string | null; stadium: string; city: string;
-  label: string; ko: boolean; a: string | null; b: string | null; result: Result | null; previewHref: string | null;
+  label: string; ko: boolean; a: string | null; b: string | null; aLabel: string | null; bLabel: string | null; result: Result | null; previewHref: string | null;
 }
 const BYPAIR = (RESULTS as any).byPair as Record<string, Result>;
 const resultFor = (a: string | null, b: string | null): Result | null =>
   a && b ? BYPAIR[[a, b].sort().join('-')] ?? null : null;
+const koByNo = Object.fromEntries(resolveBracket(BYPAIR as any, lang).rounds.flatMap((r) => r.matches.map((m) => [m.m, m] as const)));
 const rows: Row[] = [];
 SCHEDULE.groupStage.forEach((m) => {
   const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
   rows.push({
     koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
-    label: `${ui.common.group} ${m.group}`, ko: false, a, b, result: resultFor(a, b), previewHref: matchUrl(lang, m),
+    label: `${ui.common.group} ${m.group}`, ko: false, a, b, aLabel: null, bLabel: null, result: resultFor(a, b), previewHref: matchUrl(lang, m),
   });
 });
-SCHEDULE.knockout.forEach((m) => rows.push({
-  koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
-  label: roundName(lang, m.round), ko: true, a: null, b: null, result: null, previewHref: null,
-}));
+SCHEDULE.knockout.forEach((m) => {
+  const bm: any = koByNo[m.matchNo];
+  const a = bm?.a.code ?? null, b = bm?.b.code ?? null;
+  rows.push({
+    koSpain: m.koSpain, date: m.date, koLocal: m.koLocal, stadium: m.stadium, city: m.city,
+    label: roundName(lang, m.round), ko: true, a, b,
+    aLabel: a ? null : (bm?.a.label ?? null), bLabel: b ? null : (bm?.b.label ?? null),
+    result: resultFor(a, b), previewHref: koMatchUrl(lang, m.matchNo),
+  });
+});
 rows.sort((x, y) => (x.koSpain || x.date).localeCompare(y.koSpain || y.date));
 const byDay = new Map<string, Row[]>();
 for (const r of rows) { const d = (r.koSpain || r.date).slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(r); }
@@ -68,7 +76,7 @@ const jsonLd = {
         </div>
         <div class="cal-grid">
           {ms.map((m) => (
-            <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} stadium={m.stadium} city={m.city} result={m.result} previewHref={m.previewHref} />
+            <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} stadium={m.stadium} city={m.city} result={m.result} previewHref={m.previewHref} />
           ))}
         </div>
       </div>

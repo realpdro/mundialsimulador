@@ -1,0 +1,111 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, SCHEDULE } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, roundName, roundUrl, koMatchUrl, spainDateLabel, spainTime, ROUND_SLUG, SLUG_ROUND } from '../../../lib/site';
+import { resolveBracket } from '../../../lib/bracket';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  const rounds = Object.keys(ROUND_SLUG); // R32, R16, QF, SF, 3rd, Final
+  return LANGS.flatMap((lang) => rounds.map((round) => ({ params: { lang, ronda: ROUND_SLUG[round] }, props: { round } })));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const round = (Astro.props as any).round as string;
+const slug = ROUND_SLUG[round];
+const rname = roundName(lang, round);
+
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const B = resolveBracket(byPair, lang);
+const matches = (B.rounds.find((r) => r.round === round)?.matches) || [];
+const KO = Object.fromEntries(SCHEDULE.knockout.map((k) => [k.matchNo, k]));
+
+const dates = matches.map((m) => (KO[m.m]?.koSpain || KO[m.m]?.date || '').slice(0, 10)).filter(Boolean).sort();
+const dStart = dates[0] ? spainDateLabel(dates[0], dates[0], lang) : '';
+const dEnd = dates.length ? spainDateLabel(dates[dates.length - 1], dates[dates.length - 1], lang) : '';
+const played = matches.filter((m) => m.a.code && m.b.code && byPair[[m.a.code, m.b.code].sort().join('-')]?.scores).length;
+
+const updatedAt = (RESULTS as any).updatedAt
+  ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
+  : null;
+
+const RS: Record<string, Record<Lang, string>> = {
+  R32: { es: 'Es la primera ronda eliminatoria: 32 selecciones (los 2 primeros de cada grupo más los 8 mejores terceros), todo a partido único.', en: 'The first knockout round: 32 teams (the top 2 of each group plus the 8 best third-placed sides), single-elimination.', pt: 'A primeira fase eliminatória: 32 seleções (os 2 primeiros de cada grupo mais os 8 melhores terceiros), em jogo único.' },
+  R16: { es: '16 selecciones, los ganadores de los dieciseisavos, a partido único.', en: '16 teams, the winners of the round of 32, single-elimination.', pt: '16 seleções, os vencedores dos 16-avos, em jogo único.' },
+  QF: { es: 'Los 8 mejores del torneo se juegan el pase a semifinales.', en: 'The 8 best teams fight for a place in the semi-finals.', pt: 'As 8 melhores disputam a vaga nas semifinais.' },
+  SF: { es: 'Las 4 mejores selecciones del Mundial 2026, a un paso de la final.', en: 'The 4 best teams of the 2026 World Cup, one step from the final.', pt: 'As 4 melhores seleções da Copa 2026, a um passo da final.' },
+  '3rd': { es: 'Los perdedores de las semifinales se juegan la medalla de bronce.', en: 'The losing semi-finalists play for the bronze medal.', pt: 'Os perdedores das semifinais disputam o bronze.' },
+  Final: { es: 'El partido que decide al campeón del Mundial 2026.', en: 'The match that decides the 2026 World Cup champion.', pt: 'O jogo que decide o campeão da Copa 2026.' },
+};
+
+const C = {
+  es: {
+    title: `${rname} del Mundial 2026: cruces, horarios y resultados`,
+    desc: `${rname} del Mundial 2026 del ${dStart} al ${dEnd}: todos los cruces con horario (hora de España), sede y resultado en directo. Se actualiza solo.`,
+    h1: `${rname} del Mundial 2026`,
+    intro: `Los ${rname.toLowerCase()} del Mundial 2026 se juegan del ${dStart} al ${dEnd}. ${RS[round].es} Aquí tienes todos los cruces con sus horarios (hora de España), sedes y resultados, que se actualizan solos.`,
+    live: 'en directo', upd: 'actualizado', matches: 'Partidos', back: 'Ver el cuadro completo',
+    faqH: 'Preguntas frecuentes',
+    faq: [
+      { q: `¿Cuándo se juegan los ${rname.toLowerCase()} del Mundial 2026?`, a: `Del ${dStart} al ${dEnd} de 2026.` },
+      { q: `¿Cuántos partidos hay en los ${rname.toLowerCase()}?`, a: `${matches.length} ${matches.length === 1 ? 'partido' : 'partidos'}. ${RS[round].es}` },
+    ],
+  },
+  en: {
+    title: `${rname} of the 2026 World Cup: fixtures, times & results`,
+    desc: `${rname} of the 2026 World Cup from ${dStart} to ${dEnd}: every fixture with kickoff time (Spain time), venue and live result. Updates automatically.`,
+    h1: `${rname} of the 2026 World Cup`,
+    intro: `The ${rname.toLowerCase()} of the 2026 World Cup are played from ${dStart} to ${dEnd}. ${RS[round].en} Here are all the fixtures with kickoff times (Spain time), venues and results, updated automatically.`,
+    live: 'live', upd: 'updated', matches: 'Matches', back: 'See the full bracket',
+    faqH: 'FAQ',
+    faq: [
+      { q: `When are the ${rname.toLowerCase()} of the 2026 World Cup played?`, a: `From ${dStart} to ${dEnd}, 2026.` },
+      { q: `How many matches are in the ${rname.toLowerCase()}?`, a: `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}. ${RS[round].en}` },
+    ],
+  },
+  pt: {
+    title: `${rname} da Copa 2026: confrontos, horários e resultados`,
+    desc: `${rname} da Copa 2026 de ${dStart} a ${dEnd}: todos os confrontos com horário (horário da Espanha), sede e resultado ao vivo. Atualiza sozinho.`,
+    h1: `${rname} da Copa do Mundo 2026`,
+    intro: `As ${rname.toLowerCase()} da Copa 2026 acontecem de ${dStart} a ${dEnd}. ${RS[round].pt} Aqui estão todos os confrontos com horários (horário da Espanha), sedes e resultados, atualizados sozinhos.`,
+    live: 'ao vivo', upd: 'atualizado', matches: 'Jogos', back: 'Ver o chaveamento completo',
+    faqH: 'Perguntas frequentes',
+    faq: [
+      { q: `Quando são as ${rname.toLowerCase()} da Copa 2026?`, a: `De ${dStart} a ${dEnd} de 2026.` },
+      { q: `Quantos jogos há nas ${rname.toLowerCase()}?`, a: `${matches.length} ${matches.length === 1 ? 'jogo' : 'jogos'}. ${RS[round].pt}` },
+    ],
+  },
+}[lang];
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'ItemList', name: C.h1, url: `${site}/${lang}/ronda/${slug}/`, numberOfItems: matches.length, itemListElement: matches.map((m, i) => ({ '@type': 'ListItem', position: i + 1, name: `${m.a.code ? '' : ''}${m.a.label} vs ${m.b.label}`.replace(/^ vs/, '') || `Partido ${m.m}`, url: `${site}${koMatchUrl(lang, m.m)}` })) },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: C.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro', url: `/${lang}/cuadro/` }, { name: rname, url: `/${lang}/ronda/${slug}/` }];
+---
+<Base lang={lang} title={C.title} description={C.desc} path={`ronda/${slug}/`} jsonLd={jsonLd} breadcrumbs={breadcrumbs}>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={`/${lang}/cuadro/`}>{lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro'}</a> › {rname}</p>
+  <div class="page-head"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  {played > 0 && updatedAt && <p class="cal-badge">🟢 {C.live} · {C.upd} {updatedAt}h</p>}
+
+  <h2 class="section-h">{C.matches}</h2>
+  <div class="cal-grid">
+    {matches.map((m) => {
+      const ko = KO[m.m];
+      const result = m.a.code && m.b.code ? byPair[[m.a.code, m.b.code].sort().join('-')] ?? null : null;
+      return <MatchCard lang={lang} label={spainDateLabel(ko?.koSpain ?? null, ko?.date ?? '', lang)} koSpain={ko?.koSpain ?? null} koLocal={ko?.koLocal ?? null} a={m.a.code} b={m.b.code} aLabel={m.a.code ? null : m.a.label} bLabel={m.b.code ? null : m.b.label} stadium={ko?.stadium} city={ko?.city} result={result} previewHref={koMatchUrl(lang, m.m)} />;
+    })}
+  </div>
+
+  <h2 class="section-h">{C.faqH}</h2>
+  <div style="max-width:680px">
+    {C.faq.map((f) => (
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:1rem">{f.q}</h3><p style="margin:0;color:var(--muted2)">{f.a}</p></div>
+    ))}
+  </div>
+
+  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={`/${lang}/cuadro/`}>{C.back}</a></p>
+</Base>

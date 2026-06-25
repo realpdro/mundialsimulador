@@ -69,3 +69,22 @@ export function listTeams(names: string[], lang: Lang): string {
   const sep = lang === 'en' ? ' and ' : lang === 'pt' ? ' e ' : ' y ';
   return names.slice(0, -1).join(', ') + sep + names[names.length - 1];
 }
+
+// koSpain ('2026-06-28 21:00') -> ISO 8601 con zona horaria de España. En jun-jul rige el
+// horario de verano (CEST, +02:00). Necesario para que Google valide startDate de SportsEvent.
+export function toIsoSpain(koSpain: string | null): string | null {
+  return koSpain ? `${koSpain.replace(' ', 'T')}:00+02:00` : null;
+}
+// Mismo formato +02:00 sumando horas (para endDate ≈ inicio + 2h), con vuelta de día correcta.
+export function isoSpainPlus(koSpain: string | null, hours: number): string | null {
+  if (!koSpain) return null;
+  const end = new Date(new Date(`${koSpain.replace(' ', 'T')}:00+02:00`).getTime() + hours * 3600000 + 2 * 3600000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${end.getUTCFullYear()}-${p(end.getUTCMonth() + 1)}-${p(end.getUTCDate())}T${p(end.getUTCHours())}:${p(end.getUTCMinutes())}:00+02:00`;
+}
+
+// Slug ES estable de cada ronda eliminatoria (compartido por los 3 idiomas, como el resto de slugs).
+export const ROUND_SLUG: Record<string, string> = { R32: 'dieciseisavos', R16: 'octavos', QF: 'cuartos', SF: 'semifinales', '3rd': 'tercer-puesto', Final: 'final' };
+export const SLUG_ROUND: Record<string, string> = Object.fromEntries(Object.entries(ROUND_SLUG).map(([k, v]) => [v, k]));
+export const roundUrl = (l: Lang, round: string) => `/${l}/ronda/${ROUND_SLUG[round] ?? 'dieciseisavos'}/`;
+export const koMatchUrl = (l: Lang, matchNo: number) => `/${l}/partido-ko/${matchNo}/`;

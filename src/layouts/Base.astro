@@ -13,11 +13,13 @@ interface Props {
   ogImage?: string;
   jsonLd?: object | object[];
   breadcrumbs?: { name: string; url: string }[];
+  noindex?: boolean; // p.ej. partido KO con el cruce aún sin resolver: vivo pero no indexable
+  canonical?: string;
 }
-const { lang, title, description, path = '', active, ogImage, jsonLd, breadcrumbs } = Astro.props;
+const { lang, title, description, path = '', active, ogImage, jsonLd, breadcrumbs, noindex = false, canonical: canonicalOverride } = Astro.props;
 const ui = UI[lang];
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
-const canonical = `${site}/${lang}/${path}`;
+const canonical = canonicalOverride ?? `${site}/${lang}/${path}`;
 const ogImg = ogImage ?? `${site}/og.png`;
 const OG_LOCALE: Record<Lang, string> = { es: 'es_ES', en: 'en_US', pt: 'pt_BR' };
 const orgJsonLd = [
@@ -46,6 +48,7 @@ const navLinks = [
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
   <meta name="description" content={description} />
+  {noindex && <meta name="robots" content="noindex, follow" />}
   <link rel="canonical" href={canonical} />
   {LANGS.map((l) => (
     <link rel="alternate" hreflang={UI[l].htmlLang} href={`${site}/${l}/${path}`} />

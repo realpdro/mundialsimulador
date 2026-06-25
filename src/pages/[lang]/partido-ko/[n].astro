@@ -1,0 +1,127 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LANGS, type Lang, SCHEDULE, TEAMS, teamName, flagUrl } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, teamUrl, roundName, roundUrl, ROUND_SLUG, spainDateLabel, spainTime, toIsoSpain, isoSpainPlus } from '../../../lib/site';
+import { resolveBracket } from '../../../lib/bracket';
+import RESULTS from '../../../data/results.json';
+import MatchCard from '../../../components/MatchCard.astro';
+
+export function getStaticPaths() {
+  return LANGS.flatMap((lang) => SCHEDULE.knockout.map((k) => ({ params: { lang, n: String(k.matchNo) }, props: { matchNo: k.matchNo } })));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const matchNo = (Astro.props as any).matchNo as number;
+
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const B = resolveBracket(byPair, lang);
+const flat = B.rounds.flatMap((r) => r.matches.map((m) => ({ ...m, round: r.round })));
+const match = flat.find((m) => m.m === matchNo)!;
+const ko = SCHEDULE.knockout.find((k) => k.matchNo === matchNo)!;
+const round = match.round;
+const rname = roundName(lang, round);
+const rSlug = ROUND_SLUG[round];
+
+const a = match.a.code, b = match.b.code;
+const resolved = !!(a && b);
+const nameA = a ? teamName(a, lang) : match.a.label;
+const nameB = b ? teamName(b, lang) : match.b.label;
+const result = resolved ? byPair[[a, b].sort().join('-')] ?? null : null;
+const sa = result?.scores?.[a as string], sb = result?.scores?.[b as string];
+const hasScore = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
+const winnerCode = result?.winner ?? null;
+const pens = hasScore && sa === sb && winnerCode;
+const day = spainDateLabel(ko.koSpain, ko.date, lang);
+const time = spainTime(ko.koSpain);
+
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const path = `partido-ko/${matchNo}/`;
+
+const L = {
+  es: { kickAt: 'a las', spainTime: 'hora de España', winnerLbl: 'Ganador', faqTime: (t: string, d: string) => `Se juega el ${d} a las ${t}h (hora de España).`, faqTie: 'Si hay empate al final del tiempo reglamentario, se juega una prórroga de 30 minutos y, si persiste, se decide en la tanda de penaltis.', tbdRound: 'Este cruce aún no está definido. Se conocerá cuando avancen las rondas anteriores.', seeRound: `Ver ${rname.toLowerCase()}`, seeBracket: 'Ver el cuadro', stake: `Partido de ${rname.toLowerCase()} del Mundial 2026: el ganador avanza, el perdedor queda eliminado.`, teams: 'Las selecciones', faqH: 'Preguntas frecuentes' },
+  en: { kickAt: 'at', spainTime: 'Spain time', winnerLbl: 'Winner', faqTime: (t: string, d: string) => `It is played on ${d} at ${t} (Spain time).`, faqTie: 'If the score is level after normal time, there is 30 minutes of extra time and, if still tied, a penalty shootout.', tbdRound: 'This tie is not set yet. It will be known as the earlier rounds are played.', seeRound: `See the ${rname.toLowerCase()}`, seeBracket: 'See the bracket', stake: `${rname} match of the 2026 World Cup: the winner advances, the loser is out.`, teams: 'The teams', faqH: 'FAQ' },
+  pt: { kickAt: 'às', spainTime: 'horário da Espanha', winnerLbl: 'Vencedor', faqTime: (t: string, d: string) => `É disputado em ${d} às ${t} (horário da Espanha).`, faqTie: 'Se houver empate no tempo normal, há prorrogação de 30 minutos e, persistindo o empate, decisão por pênaltis.', tbdRound: 'Este confronto ainda não está definido. Será conhecido conforme as rodadas anteriores são jogadas.', seeRound: `Ver as ${rname.toLowerCase()}`, seeBracket: 'Ver o chaveamento', stake: `Jogo das ${rname.toLowerCase()} da Copa 2026: quem vence avança, quem perde está eliminado.`, teams: 'As seleções', faqH: 'Perguntas frequentes' },
+}[lang];
+
+// --- No resuelto: página viva pero NO indexable (sin "Por definir" thin) ---
+if (!resolved) {
+  // se renderiza más abajo con noindex
+}
+
+const titleResolved = hasScore
+  ? { es: `${nameA} ${sa}-${sb} ${nameB} — ${rname} Mundial 2026 (resultado)`, en: `${nameA} ${sa}-${sb} ${nameB} — ${rname} 2026 World Cup (result)`, pt: `${nameA} ${sa}-${sb} ${nameB} — ${rname} Copa 2026 (resultado)` }[lang]
+  : { es: `${nameA} vs ${nameB} — ${rname} del Mundial 2026: horario y previa`, en: `${nameA} vs ${nameB} — ${rname} of the 2026 World Cup: time & preview`, pt: `${nameA} vs ${nameB} — ${rname} da Copa 2026: horário e prévia` }[lang];
+const titleTbd = { es: `${rname} del Mundial 2026 · Partido ${matchNo}`, en: `${rname} of the 2026 World Cup · Match ${matchNo}`, pt: `${rname} da Copa 2026 · Jogo ${matchNo}` }[lang];
+
+const descResolved = hasScore
+  ? { es: `${nameA} ${sa}-${sb} ${nameB}: resultado de los ${rname.toLowerCase()} del Mundial 2026, en ${ko.stadium} (${ko.city}).`, en: `${nameA} ${sa}-${sb} ${nameB}: result of the ${rname.toLowerCase()} of the 2026 World Cup, at ${ko.stadium} (${ko.city}).`, pt: `${nameA} ${sa}-${sb} ${nameB}: resultado das ${rname.toLowerCase()} da Copa 2026, em ${ko.stadium} (${ko.city}).` }[lang]
+  : { es: `${nameA} vs ${nameB}, ${rname.toLowerCase()} del Mundial 2026: ${day} a las ${time}h (hora de España) en ${ko.stadium}, ${ko.city}. Horario y previa.`, en: `${nameA} vs ${nameB}, ${rname.toLowerCase()} of the 2026 World Cup: ${day} at ${time} (Spain time) at ${ko.stadium}, ${ko.city}. Time and preview.`, pt: `${nameA} vs ${nameB}, ${rname.toLowerCase()} da Copa 2026: ${day} às ${time} (horário da Espanha) em ${ko.stadium}, ${ko.city}. Horário e prévia.` }[lang];
+
+const title = resolved ? titleResolved : titleTbd;
+const description = resolved ? descResolved : (lang === 'en' ? `${rname} match of the 2026 World Cup at ${ko.stadium}, ${ko.city}. The teams will be set as the earlier rounds finish.` : lang === 'pt' ? `Jogo das ${rname.toLowerCase()} da Copa 2026 em ${ko.stadium}, ${ko.city}. As seleções serão definidas conforme as rodadas anteriores terminam.` : `Partido de ${rname.toLowerCase()} del Mundial 2026 en ${ko.stadium}, ${ko.city}. Las selecciones se definirán cuando terminen las rondas anteriores.`);
+
+const faq = resolved ? [
+  { q: { es: `¿A qué hora juega ${nameA} contra ${nameB}?`, en: `What time is ${nameA} vs ${nameB}?`, pt: `Que horas é ${nameA} x ${nameB}?` }[lang], a: L.faqTime(time, day) },
+  { q: { es: '¿Qué pasa si hay empate?', en: 'What happens if it ends in a draw?', pt: 'O que acontece em caso de empate?' }[lang], a: L.faqTie },
+  ...(hasScore && winnerCode ? [{ q: { es: `¿Quién ganó ${nameA} - ${nameB}?`, en: `Who won ${nameA} vs ${nameB}?`, pt: `Quem venceu ${nameA} x ${nameB}?` }[lang], a: { es: `Ganó ${teamName(winnerCode, lang)}${pens ? ' en los penaltis' : ''} (${sa}-${sb}).`, en: `${teamName(winnerCode, lang)} won${pens ? ' on penalties' : ''} (${sa}-${sb}).`, pt: `${teamName(winnerCode, lang)} venceu${pens ? ' nos pênaltis' : ''} (${sa}-${sb}).` }[lang] }] : []),
+] : [];
+
+const jsonLd: any[] = [];
+if (resolved) {
+  jsonLd.push({
+    '@context': 'https://schema.org', '@type': 'SportsEvent', name: `${nameA} vs ${nameB}`, sport: 'Soccer',
+    startDate: toIsoSpain(ko.koSpain), endDate: isoSpainPlus(ko.koSpain, 2),
+    eventStatus: hasScore ? 'https://schema.org/EventScheduled' : 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: { '@type': 'Place', name: ko.stadium, address: ko.city }, url: `${site}/${lang}/${path}`,
+    homeTeam: { '@type': 'SportsTeam', name: nameA, logo: `${site}/flags/${TEAMS[a as string].iso}.webp`, url: `${site}${teamUrl(lang, a as string)}` },
+    awayTeam: { '@type': 'SportsTeam', name: nameB, logo: `${site}/flags/${TEAMS[b as string].iso}.webp`, url: `${site}${teamUrl(lang, b as string)}` },
+  });
+  if (faq.length) jsonLd.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) });
+}
+
+const breadcrumbs = [
+  { name: ui.nav.home, url: homeUrl(lang) },
+  { name: lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro', url: `/${lang}/cuadro/` },
+  { name: rname, url: roundUrl(lang, round) },
+  { name: `${nameA} - ${nameB}`, url: `/${lang}/${path}` },
+];
+const intro = resolved
+  ? (hasScore
+    ? { es: `${nameA} ${sa}-${sb} ${nameB}. Así quedaron los ${rname.toLowerCase()} del Mundial 2026, disputado el ${day} en ${ko.stadium} (${ko.city})${pens && winnerCode ? `. ${teamName(winnerCode, lang)} se clasificó en los penaltis` : ''}.`, en: `${nameA} ${sa}-${sb} ${nameB}. Final score of this ${rname.toLowerCase()} tie at the 2026 World Cup, played on ${day} at ${ko.stadium} (${ko.city})${pens && winnerCode ? `. ${teamName(winnerCode, lang)} went through on penalties` : ''}.`, pt: `${nameA} ${sa}-${sb} ${nameB}. Resultado das ${rname.toLowerCase()} da Copa 2026, em ${day} em ${ko.stadium} (${ko.city})${pens && winnerCode ? `. ${teamName(winnerCode, lang)} avançou nos pênaltis` : ''}.` }[lang]
+    : { es: `${nameA} y ${nameB} se enfrentan en los ${rname.toLowerCase()} del Mundial 2026 el ${day} a las ${time}h (hora de España), en ${ko.stadium} (${ko.city}). ${L.stake} Sigue el resultado en directo.`, en: `${nameA} and ${nameB} meet in the ${rname.toLowerCase()} of the 2026 World Cup on ${day} at ${time} (Spain time), at ${ko.stadium} (${ko.city}). ${L.stake} Follow the result live.`, pt: `${nameA} e ${nameB} se enfrentam nas ${rname.toLowerCase()} da Copa 2026 em ${day} às ${time} (horário da Espanha), em ${ko.stadium} (${ko.city}). ${L.stake} Acompanhe o resultado ao vivo.` }[lang])
+  : L.tbdRound;
+---
+<Base lang={lang} title={title} description={description} path={path} jsonLd={jsonLd} breadcrumbs={breadcrumbs} noindex={!resolved}>
+  <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={`/${lang}/cuadro/`}>{lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro'}</a> › <a href={roundUrl(lang, round)}>{rname}</a> › {nameA} - {nameB}</p>
+
+  <div class="page-head">
+    <h1>{nameA} <span style="opacity:.45;font-weight:600;margin:0 5px">{hasScore ? `${sa}-${sb}` : 'vs'}</span> {nameB}</h1>
+    <p>{intro}</p>
+  </div>
+
+  <div class="cal-grid" style="max-width:540px;margin:0 auto 22px">
+    <MatchCard lang={lang} label={`${rname} · ${day}`} koSpain={ko.koSpain} koLocal={ko.koLocal} a={a} b={b} aLabel={a ? null : match.a.label} bLabel={b ? null : match.b.label} stadium={ko.stadium} city={ko.city} result={result} />
+  </div>
+
+  {resolved && (
+    <>
+      <h2 class="section-h">{L.teams}</h2>
+      <div class="team-grid">
+        <a class="team-card" href={teamUrl(lang, a as string)}><img class="flag lg" width="30" height="21" loading="lazy" src={flagUrl(a)} alt="" /> {nameA}</a>
+        <a class="team-card" href={teamUrl(lang, b as string)}><img class="flag lg" width="30" height="21" loading="lazy" src={flagUrl(b)} alt="" /> {nameB}</a>
+      </div>
+
+      <h2 class="section-h">{L.faqH}</h2>
+      <div style="max-width:680px">
+        {faq.map((f) => (<div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:1rem">{f.q}</h3><p style="margin:0;color:var(--muted2)">{f.a}</p></div>))}
+      </div>
+    </>
+  )}
+
+  <p style="text-align:center;margin-top:24px">
+    <a class="btn primary lg" href={roundUrl(lang, round)}>{L.seeRound}</a>
+    <a class="btn" href={`/${lang}/cuadro/`} style="margin-left:8px">{L.seeBracket}</a>
+  </p>
+</Base>

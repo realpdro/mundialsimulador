@@ -2,7 +2,7 @@
 import Base from '../../../layouts/Base.astro';
 import { LANGS, type Lang, SCHEDULE, teamName, flagUrl } from '../../../data/tournament';
 import { UI } from '../../../i18n/ui';
-import { homeUrl, groupsUrl, teamUrl, roundName, spainDateLabel, spainTime } from '../../../lib/site';
+import { homeUrl, groupsUrl, teamUrl, roundName, roundUrl, koMatchUrl, spainDateLabel, spainTime } from '../../../lib/site';
 import { resolveBracket } from '../../../lib/bracket';
 import RESULTS from '../../../data/results.json';
 
@@ -22,7 +22,7 @@ const anyResult = Object.values(byPair).some((r: any) => r && (r.scores || r.liv
 
 const C = {
   es: {
-    title: 'Cuadro del Mundial 2026 — eliminatorias en directo (octavos a la final)',
+    title: 'Cuadro del Mundial 2026 en directo — de dieciseisavos a la final',
     desc: 'El cuadro de las eliminatorias del Mundial 2026 que se rellena solo con los resultados reales: dieciseisavos, octavos, cuartos, semifinales y final. Cruces y horarios.',
     h1: 'Cuadro del Mundial 2026',
     intro: 'El cuadro completo de la fase eliminatoria. Se rellena automáticamente con los equipos reales según avanzan los grupos y se juegan las rondas. Hasta entonces verás de dónde sale cada plaza (1.º A, 2.º B, mejor 3.º…).',
@@ -61,7 +61,7 @@ const sideScore = (mm: { a: any; b: any }) => {
 
   {B.rounds.map((rd) => (
     <section class="bk-round">
-      <h2 class="section-h">{roundName(lang, rd.round)}</h2>
+      <h2 class="section-h"><a href={roundUrl(lang, rd.round)} style="color:inherit">{roundName(lang, rd.round)} →</a></h2>
       <div class="bk-grid">
         {rd.matches.map((mm) => {
           const ko = KO[mm.m];
@@ -73,7 +73,7 @@ const sideScore = (mm: { a: any; b: any }) => {
           return (
             <div class={`bk-card${r?.live ? ' live' : ''}`}>
               <div class="bk-top">
-                <span>{C.match}{mm.m}</span>
+                <a href={koMatchUrl(lang, mm.m)} style="color:var(--accent)">{C.match}{mm.m}</a>
                 {ko && <span>{spainDateLabel(ko.koSpain, ko.date, lang)}{ko.koSpain ? ` · ${spainTime(ko.koSpain)}h` : ''}</span>}
               </div>
               {[mm.a, mm.b].map((side, i) => {
