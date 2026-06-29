@@ -12,9 +12,27 @@ $TTL = 25;
 
 if (is_readable($cache) && (time() - filemtime($cache)) < $TTL) { readfile($cache); exit; }
 
-$ctx = stream_context_create(['http' => ['method' => 'GET', 'header' => "X-Auth-Token: $KEY\r\nUser-Agent: mundialsimulador\r\n", 'timeout' => 8, 'ignore_errors' => true]]);
-$raw = @file_get_contents('https://api.football-data.org/v4/competitions/WC/matches', false, $ctx);
-if ($raw === false) { if (is_readable($cache)) { readfile($cache); exit; } http_response_code(502); echo '{"error":"upstream"}'; exit; }
+function wc_fetch($KEY) {
+  $url = 'https://api.football-data.org/v4/competitions/WC/matches';
+  if (function_exists('curl_init')) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_HTTPHEADER => ['X-Auth-Token: ' . $KEY, 'User-Agent: mundialsimulador'], CURLOPT_SSL_VERIFYPEER => true]);
+    $body = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    curl_close($ch);
+    return [$body === false ? null : $body, $code, $err];
+  }
+  $ctx = stream_context_create(['http' => ['method' => 'GET', 'header' => "X-Auth-Token: $KEY\r\nUser-Agent: mundialsimulador\r\n", 'timeout' => 8, 'ignore_errors' => true]]);
+  $body = @file_get_contents($url, false, $ctx);
+  $code = 0;
+  if (isset($http_response_header)) foreach ($http_response_header as $hh) if (preg_match('#HTTP/\S+\s+(\d+)#', $hh, $mm)) $code = (int) $mm[1];
+  return [$body === false ? null : $body, $code, ''];
+}
+
+list($raw, $httpCode, $curlErr) = wc_fetch($KEY);
+
+if ($raw === null) { if (is_readable($cache)) { readfile($cache); exit; } http_response_code(502); echo '{"error":"upstream"}'; exit; }
 $data = json_decode($raw, true);
 if (!isset($data['matches'])) { if (is_readable($cache)) { readfile($cache); exit; } http_response_code(502); echo '{"error":"bad"}'; exit; }
 

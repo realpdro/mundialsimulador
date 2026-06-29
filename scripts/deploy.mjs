@@ -48,7 +48,8 @@ const distDir = join(root, 'dist');
 const livePhpPath = join(distDir, 'live.php');
 if (existsSync(livePhpPath)) {
   const src = readFileSync(livePhpPath, 'utf8');
-  if (src.includes('__FD_KEY__')) writeFileSync(livePhpPath, src.replace('__FD_KEY__', env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY || ''));
+  const fdKey = env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY || '';
+  if (src.includes('__FD_KEY__') && fdKey) { writeFileSync(livePhpPath, src.replace('__FD_KEY__', fdKey)); console.log('[live.php] API key inyectada (server-side).'); }
 }
 const toRel = (abs) => abs.slice(distDir.length + 1).split('\\').join('/');
 const local = {};
