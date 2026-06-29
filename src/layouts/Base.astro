@@ -4,6 +4,7 @@ import { LANGS, type Lang } from '../data/tournament';
 import { UI } from '../i18n/ui';
 import { homeUrl, calUrl, groupsUrl } from '../lib/site';
 import TopTicker from '../components/TopTicker.astro';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
   lang: Lang;
@@ -83,6 +84,7 @@ const navLinks = [
   {crumbJsonLd && (
     <script type="application/ld+json" set:html={JSON.stringify(crumbJsonLd)} />
   )}
+  <ClientRouter />
 </head>
 <body>
   <TopTicker lang={lang} />
@@ -94,11 +96,11 @@ const navLinks = [
       </a>
       <nav class="site-nav">
         {navLinks.map((n) => (
-          <a href={n.href} class={active === n.key ? 'active' : ''}>{n.label}</a>
+          <a href={n.href} class={active === n.key ? 'active' : ''} {...(n.key === 'simulator' ? { 'data-astro-reload': true } : {})}>{n.label}</a>
         ))}
         <span class="langsw">
           {LANGS.map((l) => (
-            <a href={`/${l}/${path}`} class={l === lang ? 'on' : ''} hreflang={UI[l].htmlLang}>{l}</a>
+            <a href={`/${l}/${path}`} class={l === lang ? 'on' : ''} hreflang={UI[l].htmlLang} {...(path === 'simulador/' ? { 'data-astro-reload': true } : {})}>{l}</a>
           ))}
         </span>
       </nav>
@@ -109,7 +111,7 @@ const navLinks = [
     <footer class="site-foot">
       <div class="flinks">
         <a href={homeUrl(lang)}>{ui.nav.home}</a>
-        <a href={`/${lang}/simulador/`}>{lang === 'en' ? 'Simulator' : 'Simulador'}</a>
+        <a href={`/${lang}/simulador/`} data-astro-reload>{lang === 'en' ? 'Simulator' : 'Simulador'}</a>
         <a href={groupsUrl(lang)}>{ui.nav.groups}</a>
         <a href={`/${lang}/clasificados/`}>{lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados'}</a>
         <a href={`/${lang}/cuadro/`}>{lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro'}</a>
@@ -125,7 +127,7 @@ const navLinks = [
     </footer>
   </div>
   <script is:inline>
-    (function(){var h=document.documentElement;if(h.classList.contains('rm')||!('IntersectionObserver' in window))return;var sel='.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa';var els=[].slice.call(document.querySelectorAll(sel));if(!els.length)return;var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.06,rootMargin:'0px 0px -40px 0px'});els.forEach(function(el){io.observe(el);});setTimeout(function(){els.forEach(function(el){el.classList.add('in');});},1600);})();
+    (function(){function reveal(){var h=document.documentElement;if(h.classList.contains('rm')||!('IntersectionObserver' in window))return;var sel='.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa,.hero-match,.segwrap';var els=[].slice.call(document.querySelectorAll(sel.replace(/(,|$)/g,':not(.in)$1')));if(!els.length)return;var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.06,rootMargin:'0px 0px -40px 0px'});els.forEach(function(el){io.observe(el);});setTimeout(function(){els.forEach(function(el){el.classList.add('in');});},1600);}document.addEventListener('astro:page-load',reveal);})();
   </script>
 </body>
 </html>

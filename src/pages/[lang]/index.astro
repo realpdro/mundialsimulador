@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, teamName } from '../../data/tournament';
+import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, teamName, teamColor, flagUrl } from '../../data/tournament';
 import { UI } from '../../i18n/ui';
 import { calUrl, groupsUrl, groupUrl, roundName, matchUrl, koMatchUrl, formatDay } from '../../lib/site';
 import { resolveBracket } from '../../lib/bracket';
@@ -27,16 +27,59 @@ SCHEDULE.knockout.forEach((m) => {
   rows.push({ koSpain: m.koSpain, koLocal: m.koLocal, label: roundName(lang, m.round), ko: true, a, b, aLabel: a ? null : (bm?.a.label ?? null), bLabel: b ? null : (bm?.b.label ?? null), result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null, href: koMatchUrl(lang, m.matchNo), day: (m.koSpain || m.date).slice(0, 10) });
 });
 rows.sort((x, y) => (x.koSpain || x.day).localeCompare(y.koSpain || y.day));
-let dayShown = todayMadrid;
-let today = rows.filter((r) => r.day === todayMadrid);
-if (!today.length) { const next = rows.find((r) => r.day > todayMadrid); if (next) { dayShown = next.day; today = rows.filter((r) => r.day === dayShown); } }
 const isToday = rows.some((r) => r.day === todayMadrid);
-const dayLabel = formatDay(dayShown, lang);
+
+// --- Segmented: Ayer / Hoy / Próximos ---
+const yMad = (() => { const [Y, M, D] = todayMadrid.split('-').map(Number); const d = new Date(Date.UTC(Y, M - 1, D - 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; })();
+const yesterdayRows = rows.filter((r) => r.day === yMad);
+const todayRows = rows.filter((r) => r.day === todayMadrid);
+const futureDays = [...new Set(rows.filter((r) => r.day > todayMadrid).map((r) => r.day))].slice(0, 2);
+const upcomingRows = rows.filter((r) => futureDays.includes(r.day));
+const defaultSeg = todayRows.length ? 'today' : (upcomingRows.length ? 'next' : 'yest');
+const SEG = {
+  es: { yest: 'Ayer', today: 'Hoy', next: 'Próximos', empty: 'No hay partidos.' },
+  en: { yest: 'Yesterday', today: 'Today', next: 'Upcoming', empty: 'No matches.' },
+  pt: { yest: 'Ontem', today: 'Hoje', next: 'Próximos', empty: 'Sem jogos.' },
+}[lang];
+const segPanels = [
+  { id: 'yest', label: SEG.yest, rows: yesterdayRows },
+  { id: 'today', label: SEG.today, rows: todayRows },
+  { id: 'next', label: SEG.next, rows: upcomingRows },
+];
+
+// --- Partido destacado (HERO): en vivo > próximo de hoy > próximo en general > último jugado ---
+const playable = rows.filter((r) => r.a && r.b);
+const nowMadT = `${todayMadrid}T${new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date())}`;
+const liveRow = playable.find((r) => r.result?.live);
+const upcomingToday = playable.find((r) => r.day === todayMadrid && !r.result?.scores && (r.koSpain || '') >= nowMadT)
+  ?? playable.find((r) => r.day === todayMadrid && !r.result?.scores)
+  ?? playable.find((r) => r.day === todayMadrid);
+const nextOverall = playable.find((r) => r.day > todayMadrid);
+const lastPlayed = [...playable].reverse().find((r) => r.result?.scores);
+const featured = liveRow ?? upcomingToday ?? nextOverall ?? lastPlayed ?? null;
+
+const FB_MONTH = { es: ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'], en: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], pt: ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'] }[lang];
+function heroData(r: Row | null) {
+  if (!r || !r.a || !r.b) return null;
+  const d10 = (r.koSpain || '').slice(0, 10);
+  const sa = r.result?.scores ? r.result.scores[r.a] as number : null;
+  const sb = r.result?.scores ? r.result.scores[r.b] as number : null;
+  const hasScore = sa != null && sb != null;
+  return {
+    pair: [r.a, r.b].slice().sort().join('-'),
+    a: r.a, b: r.b, sa, sb, hasScore, live: !!r.result?.live,
+    time: r.koSpain ? r.koSpain.slice(11, 16) : '',
+    date: d10 ? `${parseInt(d10.slice(8, 10), 10)} ${FB_MONTH[parseInt(d10.slice(5, 7), 10)]}` : '',
+    href: r.href, label: r.label,
+  };
+}
+const HERO = heroData(featured);
+const heroTag = { es: { live: 'EN VIVO', next: 'Próximo partido' }, en: { live: 'LIVE', next: 'Up next' }, pt: { live: 'AO VIVO', next: 'A seguir' } }[lang];
 
 const C = {
-  es: { title: 'Resultados del Mundial 2026 en directo · marcadores y clasificación', desc: 'Marcadores en vivo del Mundial 2026: partidos de hoy, resultados, clasificación de los grupos, cuadro de eliminatorias y máximos goleadores. Todo en directo y se actualiza solo.', h1: 'Mundial 2026 en directo', intro: 'Resultados, partidos de hoy, clasificación y cuadro de eliminatorias — en vivo y se actualiza solo.', todayH: isToday ? `Partidos de hoy · ${dayLabel}` : `Próximos partidos · ${dayLabel}`, seeCal: 'Calendario completo', groupsH: 'Grupos del Mundial 2026', simH: '¿Y tú, cómo crees que acaba?', simSub: 'Predice todos los partidos, monta el cuadro y descubre tu campeón.', simCta: 'Abrir el simulador' },
-  en: { title: '2026 World Cup live scores · results and standings', desc: 'Live scores of the 2026 World Cup: today\'s matches, results, group standings, knockout bracket and top scorers. All live and updating automatically.', h1: '2026 World Cup live', intro: 'Results, today\'s matches, standings and the knockout bracket — live and updating automatically.', todayH: isToday ? `Today's matches · ${dayLabel}` : `Next matches · ${dayLabel}`, seeCal: 'Full schedule', groupsH: '2026 World Cup groups', simH: 'How do you think it ends?', simSub: 'Predict every match, build the bracket and find your champion.', simCta: 'Open the simulator' },
-  pt: { title: 'Resultados da Copa 2026 ao vivo · placares e classificação', desc: 'Placares ao vivo da Copa 2026: jogos de hoje, resultados, classificação dos grupos, chaveamento do mata-mata e artilheiros. Tudo ao vivo e atualiza sozinho.', h1: 'Copa 2026 ao vivo', intro: 'Resultados, jogos de hoje, classificação e chaveamento — ao vivo e atualiza sozinho.', todayH: isToday ? `Jogos de hoje · ${dayLabel}` : `Próximos jogos · ${dayLabel}`, seeCal: 'Calendário completo', groupsH: 'Grupos da Copa 2026', simH: 'Como você acha que termina?', simSub: 'Preveja todos os jogos, monte o chaveamento e ache seu campeão.', simCta: 'Abrir o simulador' },
+  es: { title: 'Resultados del Mundial 2026 en directo · marcadores y clasificación', desc: 'Marcadores en vivo del Mundial 2026: partidos de hoy, resultados, clasificación de los grupos, cuadro de eliminatorias y máximos goleadores. Todo en directo y se actualiza solo.', h1: 'Mundial 2026 en directo', intro: 'Resultados, partidos de hoy, clasificación y cuadro de eliminatorias — en vivo y se actualiza solo.', seeCal: 'Calendario completo', groupsH: 'Grupos del Mundial 2026', simH: '¿Y tú, cómo crees que acaba?', simSub: 'Predice todos los partidos, monta el cuadro y descubre tu campeón.', simCta: 'Abrir el simulador' },
+  en: { title: '2026 World Cup live scores · results and standings', desc: 'Live scores of the 2026 World Cup: today\'s matches, results, group standings, knockout bracket and top scorers. All live and updating automatically.', h1: '2026 World Cup live', intro: 'Results, today\'s matches, standings and the knockout bracket — live and updating automatically.', seeCal: 'Full schedule', groupsH: '2026 World Cup groups', simH: 'How do you think it ends?', simSub: 'Predict every match, build the bracket and find your champion.', simCta: 'Open the simulator' },
+  pt: { title: 'Resultados da Copa 2026 ao vivo · placares e classificação', desc: 'Placares ao vivo da Copa 2026: jogos de hoje, resultados, classificação dos grupos, chaveamento do mata-mata e artilheiros. Tudo ao vivo e atualiza sozinho.', h1: 'Copa 2026 ao vivo', intro: 'Resultados, jogos de hoje, classificação e chaveamento — ao vivo e atualiza sozinho.', seeCal: 'Calendário completo', groupsH: 'Grupos da Copa 2026', simH: 'Como você acha que termina?', simSub: 'Preveja todos os jogos, monte o chaveamento e ache seu campeão.', simCta: 'Abrir o simulador' },
 }[lang];
 
 const HUB = {
@@ -48,14 +91,63 @@ const HUB = {
 <Base lang={lang} title={C.title} description={C.desc} path="" active="home">
   <div class="page-head" style="padding-bottom:14px"><h1>{C.h1}</h1><p>{C.intro}</p></div>
 
-  <h2 class="section-h" style="text-align:center">{C.todayH}</h2>
-  {today.length > 0 && (
-    <div class="cal-grid">
-      {today.map((m) => (
-        <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} result={m.result} previewHref={m.href} />
+  {HERO && (
+    <a
+      class={`am hero-match${HERO.hasScore || HERO.live ? ' played' : ''}`}
+      href={HERO.href ?? undefined}
+      style={`--ca:${teamColor(HERO.a)};--cb:${teamColor(HERO.b)}`}
+      data-pair={HERO.pair} data-a={HERO.a} data-b={HERO.b}
+      aria-label={`${teamName(HERO.a, lang)} - ${teamName(HERO.b, lang)}`}
+    >
+      <span class={`hm-tag${HERO.live ? ' live' : ''}`}>{HERO.live ? heroTag.live : heroTag.next}</span>
+
+      <div class={`am-side home${HERO.hasScore && HERO.sb! > HERO.sa! ? ' lose' : ''}`}>
+        <span class="am-crest"><img class="flag" width="60" height="45" src={flagUrl(HERO.a)} alt="" /></span>
+        <span class="am-name">{teamName(HERO.a, lang)}</span>
+      </div>
+
+      <div class="hm-center">
+        <div class="hm-kick"><span class="hm-time">{HERO.time}</span><span class="hm-date">{HERO.date}</span></div>
+        <div class="hm-score">
+          <b class={`am-score${HERO.hasScore && HERO.sa! > HERO.sb! ? ' win' : ''}${HERO.hasScore && HERO.sa! < HERO.sb! ? ' lose' : ''}`} data-side="a">{HERO.hasScore ? HERO.sa : ''}</b>
+          <span class="hm-dash">–</span>
+          <b class={`am-score${HERO.hasScore && HERO.sb! > HERO.sa! ? ' win' : ''}${HERO.hasScore && HERO.sb! < HERO.sa! ? ' lose' : ''}`} data-side="b">{HERO.hasScore ? HERO.sb : ''}</b>
+        </div>
+        <span class={`am-st${HERO.live ? ' live' : ''}${HERO.hasScore ? ' fin' : ''}`}>{HERO.live ? '•' : (HERO.hasScore ? 'Final' : HERO.label)}</span>
+      </div>
+
+      <div class={`am-side away${HERO.hasScore && HERO.sa! > HERO.sb! ? ' lose' : ''}`}>
+        <span class="am-name">{teamName(HERO.b, lang)}</span>
+        <span class="am-crest"><img class="flag" width="60" height="45" src={flagUrl(HERO.b)} alt="" /></span>
+      </div>
+    </a>
+  )}
+
+  <div class="segwrap">
+    <div class="seg-ctl" role="tablist" data-default={defaultSeg}>
+      <span class="seg-pill" aria-hidden="true"></span>
+      {segPanels.map((p) => (
+        <button type="button" class="seg-btn" role="tab" data-seg={p.id} disabled={p.rows.length === 0}>
+          {p.label}{p.rows.length > 0 && <i class="seg-n">{p.rows.length}</i>}
+        </button>
       ))}
     </div>
-  )}
+
+    {segPanels.map((p) => (
+      <div class="seg-panel" data-panel={p.id} hidden>
+        {p.rows.length > 0 ? (
+          <div class="cal-grid">
+            {p.rows.map((m) => (
+              <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} result={m.result} previewHref={m.href} />
+            ))}
+          </div>
+        ) : (
+          <p class="seg-empty">{SEG.empty}</p>
+        )}
+      </div>
+    ))}
+  </div>
+
   <p style="text-align:center;margin-top:14px"><a class="btn" href={calUrl(lang)}>{C.seeCal} →</a></p>
 
   <div class="hub-grid">
@@ -64,7 +156,7 @@ const HUB = {
     ))}
   </div>
 
-  <a class="sim-promo" href={`/${lang}/simulador/`}>
+  <a class="sim-promo" href={`/${lang}/simulador/`} data-astro-reload>
     <div><b>{C.simH}</b><span>{C.simSub}</span></div>
     <span class="btn primary">{C.simCta}</span>
   </a>
@@ -89,4 +181,73 @@ const HUB = {
   .sim-promo b { font-size:15px; }
   .sim-promo span { font-size:13px; color:var(--muted); }
   .sim-promo .btn { white-space:nowrap; }
+
+  /* ---------- Tarjeta HERO (partido destacado) ---------- */
+  .hero-match { position:relative; display:flex; align-items:center; gap:14px; max-width:680px; margin:0 auto 18px; padding:26px 22px; background:#0d0f15; border-radius:22px; overflow:hidden; box-shadow:var(--shadow); isolation:isolate; }
+  .hero-match::before { content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(120% 140% at 0% 0%,var(--ca) 0%,transparent 52%),radial-gradient(120% 140% at 100% 100%,var(--cb) 0%,transparent 52%); opacity:.72; }
+  .hero-match::after { content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(72% 120% at 50% 50%,rgba(8,9,12,.55),transparent 72%); }
+  .hero-match:hover { transform:translateY(-2px); transition:transform .18s ease; }
+  .hm-tag { position:absolute; top:14px; left:16px; z-index:2; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.75); background:rgba(255,255,255,.1); padding:5px 10px; border-radius:20px; backdrop-filter:blur(8px); }
+  .hm-tag.live { color:#fff; background:var(--red); box-shadow:0 0 16px rgba(255,69,58,.5); animation:livepulse 1.4s infinite; }
+  .hero-match .am-side { flex:1; min-width:0; display:flex; align-items:center; gap:12px; }
+  .hero-match .am-side.away { justify-content:flex-end; }
+  .hero-match .am-crest .flag { width:60px; height:45px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.16); }
+  .hero-match .am-name { font-size:18px; font-weight:700; color:var(--txt); }
+  .hero-match .am-side.lose .am-name { color:var(--muted); }
+  .hm-center { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:96px; }
+  .hm-score { display:none; align-items:center; gap:8px; }
+  .hero-match .am-score { font-size:44px; line-height:1; font-weight:800; color:var(--txt); }
+  .hero-match .am-score.lose { color:rgba(255,255,255,.5); }
+  .hm-dash { font-size:30px; font-weight:300; color:rgba(255,255,255,.4); }
+  .hm-kick { display:flex; flex-direction:column; align-items:center; }
+  .hm-time { font-size:34px; font-weight:800; color:#fff; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .hm-date { font-size:12px; font-weight:600; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.05em; }
+  .hero-match .am-st { font-size:13px; font-weight:700; color:rgba(255,255,255,.62); }
+  .hero-match .am-st.live { color:#fff; }
+  .hero-match.played .hm-kick { display:none; }
+  .hero-match.played .hm-score { display:flex; }
+  @media (max-width:480px){
+    .hero-match { gap:8px; padding:22px 14px; }
+    .hero-match .am-name { font-size:14px; }
+    .hero-match .am-crest .flag { width:46px; height:35px; }
+    .hero-match .am-score { font-size:36px; }
+    .hm-time { font-size:28px; }
+    .hm-center { min-width:80px; }
+  }
+
+  /* ---------- Segmented control (Ayer · Hoy · Próximos) ---------- */
+  .segwrap { max-width:680px; margin:0 auto; }
+  .seg-ctl { position:relative; display:flex; background:var(--card); border:1px solid var(--line); border-radius:13px; padding:4px; margin:0 auto 16px; max-width:360px; }
+  .seg-btn { position:relative; z-index:1; flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:9px 6px; border-radius:9px; color:var(--muted); background:transparent; border:0; cursor:pointer; transition:color .2s ease; -webkit-tap-highlight-color:transparent; }
+  .seg-btn[disabled] { opacity:.4; cursor:default; }
+  .seg-btn.on { color:#04210f; }
+  .seg-n { font-style:normal; font-size:10px; font-weight:800; min-width:16px; padding:1px 5px; border-radius:20px; background:rgba(255,255,255,.12); color:inherit; }
+  .seg-btn.on .seg-n { background:rgba(0,0,0,.18); }
+  .seg-pill { position:absolute; top:4px; bottom:4px; z-index:0; width:calc((100% - 8px) / 3); left:calc(4px + var(--i, 1) * (100% - 8px) / 3); border-radius:9px; background:linear-gradient(135deg,var(--green2),var(--green)); box-shadow:0 4px 14px rgba(48,209,88,.28); transition:left .28s cubic-bezier(.32,.72,0,1); }
+  .seg-panel[hidden] { display:none; }
+  .seg-empty { text-align:center; color:var(--muted2); font-size:13.5px; padding:24px 0; }
 </style>
+
+<script>
+  // Segmented control: bundled (corre una vez) + re-init en cada astro:page-load (View Transitions).
+  function initSeg() {
+    const ctl = document.querySelector('.seg-ctl') as HTMLElement | null;
+    if (!ctl) return;
+    const btns = Array.from(ctl.querySelectorAll('.seg-btn')) as HTMLButtonElement[];
+    const panels = Array.from(document.querySelectorAll('.seg-panel')) as HTMLElement[];
+    const idx: Record<string, number> = { yest: 0, today: 1, next: 2 };
+    function activate(id: string) {
+      const btn = btns.find((b) => b.dataset.seg === id && !b.disabled);
+      if (!btn) return;
+      btns.forEach((b) => b.classList.toggle('on', b === btn));
+      panels.forEach((p) => { p.hidden = p.dataset.panel !== id; });
+      ctl!.style.setProperty('--i', String(idx[id] ?? 1));
+    }
+    btns.forEach((b) => b.addEventListener('click', () => { if (!b.disabled && b.dataset.seg) activate(b.dataset.seg); }));
+    const def = ctl.dataset.default;
+    const firstEnabled = btns.find((b) => !b.disabled);
+    const start = (def && btns.find((b) => b.dataset.seg === def && !b.disabled)) ? def : firstEnabled?.dataset.seg;
+    if (start) activate(start);
+  }
+  document.addEventListener('astro:page-load', initSeg);
+</script>

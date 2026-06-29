@@ -127,7 +127,16 @@ function updateStandings(byPair: Record<string, Entry>, c: Cfg) {
   });
 }
 
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+let liveTick: (() => void) | null = null;
+let visBound = false;
+
+// Idempotente: seguro re-llamarlo en cada astro:page-load (View Transitions). Limpia el
+// intervalo previo y lee el #live-cfg de la página nueva; el listener de visibilidad se
+// registra una sola vez. Las queries son sobre `document` en vivo → apuntan al DOM actual.
 export function startLive() {
+  if (liveTimer !== null) { clearInterval(liveTimer); liveTimer = null; }
+  liveTick = null;
   const c = readCfg();
   if (!c) return;
   function tick() {
@@ -141,7 +150,11 @@ export function startLive() {
       })
       .catch(() => {});
   }
+  liveTick = tick;
   tick();
-  setInterval(tick, 35000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+  liveTimer = setInterval(tick, 35000);
+  if (!visBound) {
+    visBound = true;
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && liveTick) liveTick(); });
+  }
 }

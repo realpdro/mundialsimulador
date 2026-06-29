@@ -300,8 +300,8 @@ h1,h2,h3,.hero h1,.page-head h1,.section-h,.prose h2,.logo b,.modal h3,.scen-car
 .cm-stat-col .live{text-shadow:0 0 10px rgba(255,90,95,.4)}
 
 /* ---------- motion / reveal ---------- */
-html.js:not(.rm) :is(.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa){opacity:0;transform:translateY(16px)}
-html.js:not(.rm) :is(.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa).in{opacity:1;transform:none;transition:opacity .5s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+html.js:not(.rm) :is(.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa,.hero-match,.segwrap){opacity:0;transform:translateY(16px)}
+html.js:not(.rm) :is(.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa,.hero-match,.segwrap).in{opacity:1;transform:none;transition:opacity .5s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
 @keyframes gradmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .logo .crest{background:var(--grad);background-size:180% 180%;animation:gradmove 7s ease infinite}
 .cal-match .flag{transition:transform .16s ease}
@@ -311,3 +311,6 @@ html.js:not(.rm) :is(.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qca
 .sim-promo{position:relative;overflow:hidden}
 .sim-promo::before{content:"";position:absolute;inset:0;border-radius:14px;padding:1.5px;background:linear-gradient(120deg,#22c55e,#38bdf8,#22c55e);background-size:220% 220%;animation:gradmove 4.5s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.85}
 @media(prefers-reduced-motion:reduce){.logo .crest,.sim-promo::before,.cm-stat-col .live,.tk-stat.live{animation:none}}
+/* View Transitions: cross-fade sobrio (180ms) */
+@media (prefers-reduced-motion:no-preference){::view-transition-old(root),::view-transition-new(root){animation-duration:.18s;animation-timing-function:cubic-bezier(.4,0,.2,1)}}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none}}

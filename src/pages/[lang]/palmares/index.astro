@@ -118,7 +118,7 @@ const breadcrumbs = [{ name: ui.nav.home, url: homeUrl(lang) }, { name: C.h1, ur
   <h2 class="section-h">{C.faqH}</h2>
   <div class="faqs">{faq.map((f) => (<div class="qa"><h3>{f.q}</h3><p>{f.a}</p></div>))}</div>
 
-  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={homeUrl(lang)}>{C.cta}</a></p>
+  <p style="text-align:center;margin-top:24px"><a class="btn primary lg" href={`/${lang}/simulador/`} data-astro-reload>{C.cta}</a></p>
 </Base>
 
 <style>
