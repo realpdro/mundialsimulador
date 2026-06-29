@@ -107,10 +107,10 @@ const POS = (i: number) => (i < 2 ? '#22c55e' : i === 2 ? '#f59e0b' : '#ef4444')
   </p>
   <div class="qgrid">
     {Q.groups.map((g) => (
-      <div class="qcard">
+      <div class="qcard" data-group={g.L}>
         <a class="qh" href={groupUrl(lang, g.L)}>{ui.common.group} {g.L}</a>
         {g.order.map((s, i) => (
-          <a class="qrow" href={teamUrl(lang, s.code)} style={`border-left-color:${POS(i)}`}>
+          <a class="qrow" href={teamUrl(lang, s.code)} data-code={s.code} style={`border-left-color:${POS(i)}`}>
             <span class="qpos">{i + 1}</span>
             <img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.code)} alt="" />
             <span class="qname">{teamName(s.code, lang)}</span>

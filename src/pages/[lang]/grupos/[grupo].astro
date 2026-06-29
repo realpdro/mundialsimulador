@@ -75,9 +75,9 @@ const LIVE = {
       <div style="background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:8px">
         <table class="stand">
           <thead><tr><th class="teamh">{TH}</th><th>{ui.common.pj}</th><th>{ui.common.w}</th><th>{ui.common.d}</th><th>{ui.common.l}</th><th>{ui.common.gd}</th><th>{ui.common.points}</th></tr></thead>
-          <tbody>
+          <tbody data-live-stand={L}>
             {standings.order.map((s, idx) => (
-              <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''}>
+              <tr class={idx === 0 ? 'q1' : idx === 1 ? 'q2' : idx === 2 ? 'q3' : ''} data-code={s.code}>
                 <td class="team"><div class="row"><span class="pos">{idx + 1}</span><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(s.code)} alt="" /><span class="tname">{teamName(s.code, lang)}</span></div></td>
                 <td>{s.pj}</td><td>{s.g}</td><td>{s.e}</td><td>{s.p}</td><td>{s.dg > 0 ? '+' : ''}{s.dg}</td><td class="pts">{s.pts}</td>
               </tr>

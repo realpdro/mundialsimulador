@@ -1,44 +1,25 @@
 ---
-// Sondea /live.php (proxy cacheado) cada ~35s y muestra una franja con los partidos EN JUEGO,
-// actualizando el marcador sin recargar. El sitio sigue estático; solo el dato vivo viene del feed.
-import { TEAMS, teamName, type Lang } from '../data/tournament';
-interface Props { lang: Lang }
-const { lang } = Astro.props;
+// Inyecta la config (equipos, grupos, etiquetas) y arranca el motor de "en vivo" (src/scripts/live.ts),
+// que sondea /live.php cada ~35s y actualiza franja + marcadores + clasificaciones sin recargar.
+import { TEAMS, teamName, GROUPS, type Lang } from '../data/tournament';
+const { lang } = Astro.props as { lang: Lang };
 const teams = Object.fromEntries(Object.keys(TEAMS).map((c) => [c, [teamName(c, lang), TEAMS[c].iso]]));
-const T = {
-  live: { es: 'EN JUEGO', en: 'LIVE', pt: 'AO VIVO' }[lang],
-  hoyHref: `/${lang}/partidos-de-hoy/`,
+const cfg = {
+  lang,
+  teams,
+  groups: GROUPS,
+  labels: {
+    live: { es: 'EN JUEGO', en: 'LIVE', pt: 'AO VIVO' }[lang],
+    fin: { es: 'Final', en: 'Full-time', pt: 'Encerrado' }[lang],
+    hoyHref: `/${lang}/partidos-de-hoy/`,
+  },
 };
 ---
 <div id="live-banner" hidden></div>
-<script define:vars={{ teams, T }}>
-  (function () {
-    var banner = document.getElementById('live-banner');
-    if (!banner) return;
-    function flag(iso) { return '<img src="/flags/' + iso + '.webp" width="20" height="14" alt="" loading="lazy" style="border-radius:2px;vertical-align:-2px">'; }
-    function render(byPair) {
-      var keys = Object.keys(byPair).filter(function (k) { return byPair[k] && byPair[k].live; });
-      if (!keys.length) { banner.hidden = true; banner.innerHTML = ''; return; }
-      var items = keys.map(function (k) {
-        var v = byPair[k], p = k.split('-'), a = p[0], b = p[1];
-        var sa = v.scores ? v.scores[a] : '', sb = v.scores ? v.scores[b] : '';
-        var ta = teams[a] || [a, ''], tb = teams[b] || [b, ''];
-        var mins = (v.minute != null ? " <span class='lb-min'>" + v.minute + "'</span>" : '');
-        return "<a class='lb-m' href='" + T.hoyHref + "'>" + flag(ta[1]) + " " + ta[0] + " <b>" + sa + "-" + sb + "</b> " + tb[0] + " " + flag(tb[1]) + mins + "</a>";
-      }).join('');
-      banner.innerHTML = "<div class='lb-in'><span class='lb-t'>🔴 " + T.live + "</span>" + items + "</div>";
-      banner.hidden = false;
-    }
-    function tick() {
-      fetch('/live.php', { cache: 'no-store' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) { if (d && d.byPair) render(d.byPair); })
-        .catch(function () {});
-    }
-    tick();
-    setInterval(tick, 35000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
-  })();
+<script type="application/json" id="live-cfg" is:inline set:html={JSON.stringify(cfg)}></script>
+<script>
+  import { startLive } from '../scripts/live';
+  startLive();
 </script>
 <style>
   #live-banner .lb-in { display:flex; gap:16px; align-items:center; flex-wrap:wrap; background:linear-gradient(90deg, rgba(239,68,68,.16), rgba(10,15,28,0)); border:1px solid rgba(239,68,68,.4); border-radius:12px; padding:9px 14px; margin:0 0 16px; font-size:14px; }
