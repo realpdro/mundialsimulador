@@ -2,8 +2,9 @@
 import Base from '../../layouts/Base.astro';
 import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, teamName, teamColor, flagUrl } from '../../data/tournament';
 import { UI } from '../../i18n/ui';
-import { calUrl, groupsUrl, groupUrl, roundName, matchUrl, koMatchUrl, formatDay } from '../../lib/site';
+import { calUrl, groupsUrl, groupUrl, roundName, roundUrl, matchUrl, koMatchUrl, formatDay } from '../../lib/site';
 import { resolveBracket } from '../../lib/bracket';
+import { phaseInfo, isPlayed } from '../../lib/phase';
 import RESULTS from '../../data/results.json';
 import MatchCard from '../../components/MatchCard.astro';
 
@@ -13,7 +14,13 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const ui = UI[lang];
 const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
-const koByNo: Record<number, any> = Object.fromEntries(resolveBracket(byPair, lang).rounds.flatMap((r) => r.matches.map((m) => [m.m, { ...m, round: r.round }])));
+const bracket = resolveBracket(byPair, lang);
+const koByNo: Record<number, any> = Object.fromEntries(bracket.rounds.flatMap((r) => r.matches.map((m) => [m.m, { ...m, round: r.round }])));
+const { groupStageDone } = phaseInfo(byPair);
+const koPlayed = (m: any) => { const a = m?.a?.code, b = m?.b?.code; return a && b ? isPlayed(byPair[[a, b].slice().sort().join('-')]) : false; };
+const koRounds = bracket.rounds.map((r) => { const total = r.matches.length; const done = r.matches.filter(koPlayed).length; return { round: r.round, name: roundName(lang, r.round), total, done }; });
+let currentRoundIdx = koRounds.findIndex((r) => r.done < r.total);
+if (currentRoundIdx < 0) currentRoundIdx = Math.max(0, koRounds.length - 1);
 const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
 interface Row { koSpain: string | null; koLocal: string | null; label: string; ko: boolean; a: string | null; b: string | null; aLabel: string | null; bLabel: string | null; result: any; href: string | null; day: string; }
@@ -86,6 +93,12 @@ const HUB = {
   es: [['clasificados', 'Quién se clasifica', 'ti-checks'], ['cuadro', 'Cuadro de eliminatorias', 'ti-trophy'], ['goleadores', 'Máximos goleadores', 'ti-ball-football'], ['calendario', 'Calendario completo', 'ti-calendar']],
   en: [['clasificados', 'Who qualifies', 'ti-checks'], ['cuadro', 'Knockout bracket', 'ti-trophy'], ['goleadores', 'Top scorers', 'ti-ball-football'], ['calendario', 'Full schedule', 'ti-calendar']],
   pt: [['clasificados', 'Quem se classifica', 'ti-checks'], ['cuadro', 'Chaveamento', 'ti-trophy'], ['goleadores', 'Artilheiros', 'ti-ball-football'], ['calendario', 'Calendário completo', 'ti-calendar']],
+}[lang];
+
+const PH = {
+  es: { koH: 'Eliminatorias', groupsDoneH: 'Clasificación final de los grupos', seeBracket: 'Ver el cuadro completo' },
+  en: { koH: 'Knockouts', groupsDoneH: 'Final group standings', seeBracket: 'See the full bracket' },
+  pt: { koH: 'Mata-mata', groupsDoneH: 'Classificação final dos grupos', seeBracket: 'Ver o chaveamento completo' },
 }[lang];
 ---
 <Base lang={lang} title={C.title} description={C.desc} path="" active="home">
@@ -161,7 +174,22 @@ const HUB = {
     <span class="btn primary">{C.simCta}</span>
   </a>
 
-  <h2 class="section-h">{C.groupsH}</h2>
+  {groupStageDone && (
+    <>
+      <h2 class="section-h">{PH.koH}</h2>
+      <div class="ko-rounds">
+        {koRounds.map((r, i) => (
+          <a class={`ko-round${i === currentRoundIdx ? ' current' : ''}${r.done >= r.total ? ' done' : ''}`} href={roundUrl(lang, r.round)}>
+            <b>{r.name}</b>
+            <span>{r.done >= r.total ? '✓' : `${r.done}/${r.total}`}</span>
+          </a>
+        ))}
+      </div>
+      <p style="text-align:center;margin-top:10px"><a class="btn" href={`/${lang}/cuadro/`}>{PH.seeBracket} →</a></p>
+    </>
+  )}
+
+  <h2 class="section-h">{groupStageDone ? PH.groupsDoneH : C.groupsH}</h2>
   <div class="tile-grid">
     {LETTERS.map((L) => (
       <a class="tile" href={groupUrl(lang, L)}>
@@ -181,6 +209,17 @@ const HUB = {
   .sim-promo b { font-size:15px; }
   .sim-promo span { font-size:13px; color:var(--muted); }
   .sim-promo .btn { white-space:nowrap; }
+
+  /* ---------- Rondas de eliminatorias (home en fase KO) ---------- */
+  .ko-rounds { display:flex; gap:8px; max-width:680px; margin:0 auto; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .ko-rounds::-webkit-scrollbar { display:none; }
+  .ko-round { flex:1 0 auto; min-width:98px; display:flex; flex-direction:column; align-items:center; gap:5px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 10px; color:var(--txt); }
+  .ko-round b { font-size:13px; font-weight:700; white-space:nowrap; }
+  .ko-round span { font-size:11px; color:var(--muted2); font-weight:800; font-variant-numeric:tabular-nums; }
+  .ko-round.current { border-color:var(--green); box-shadow:0 0 0 1px var(--green),0 6px 18px rgba(48,209,88,.16); }
+  .ko-round.current span { color:var(--green); }
+  .ko-round.done { opacity:.62; }
+  .ko-round:hover { border-color:var(--accent); }
 
   /* ---------- Tarjeta HERO (partido destacado) ---------- */
   .hero-match { position:relative; display:flex; align-items:center; gap:14px; max-width:680px; margin:0 auto 18px; padding:26px 22px; background:#0d0f15; border-radius:22px; overflow:hidden; box-shadow:var(--shadow); isolation:isolate; }

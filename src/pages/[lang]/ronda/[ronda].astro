@@ -26,6 +26,14 @@ const dates = matches.map((m) => (KO[m.m]?.koSpain || KO[m.m]?.date || '').slice
 const dStart = dates[0] ? spainDateLabel(dates[0], dates[0], lang) : '';
 const dEnd = dates.length ? spainDateLabel(dates[dates.length - 1], dates[dates.length - 1], lang) : '';
 const played = matches.filter((m) => m.a.code && m.b.code && byPair[[m.a.code, m.b.code].sort().join('-')]?.scores).length;
+const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const roundDone = matches.length > 0 && played >= matches.length;
+const roundLive = !roundDone && (played > 0 || (!!dates[0] && dates[0] <= todayMadrid));
+const VERB = {
+  es: roundDone ? 'se jugaron' : roundLive ? 'se están jugando' : 'se juegan',
+  en: roundDone ? 'were played' : roundLive ? 'are being played' : 'are played',
+  pt: roundDone ? 'foram disputadas' : roundLive ? 'estão sendo disputadas' : 'acontecem',
+}[lang];
 
 const updatedAt = (RESULTS as any).updatedAt
   ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
@@ -45,7 +53,7 @@ const C = {
     title: `${rname} del Mundial 2026: cruces, horarios y resultados`,
     desc: `${rname} del Mundial 2026 del ${dStart} al ${dEnd}: todos los cruces con horario (hora de España), sede y resultado en directo. Se actualiza solo.`,
     h1: `${rname} del Mundial 2026`,
-    intro: `Los ${rname.toLowerCase()} del Mundial 2026 se juegan del ${dStart} al ${dEnd}. ${RS[round].es} Aquí tienes todos los cruces con sus horarios (hora de España), sedes y resultados, que se actualizan solos.`,
+    intro: `Los ${rname.toLowerCase()} del Mundial 2026 ${VERB} del ${dStart} al ${dEnd}. ${RS[round].es} Aquí tienes todos los cruces con sus horarios (hora de España), sedes y resultados, que se actualizan solos.`,
     live: 'en directo', upd: 'actualizado', matches: 'Partidos', back: 'Ver el cuadro completo',
     faqH: 'Preguntas frecuentes',
     faq: [
@@ -57,7 +65,7 @@ const C = {
     title: `${rname} of the 2026 World Cup: fixtures, times & results`,
     desc: `${rname} of the 2026 World Cup from ${dStart} to ${dEnd}: every fixture with kickoff time (Spain time), venue and live result. Updates automatically.`,
     h1: `${rname} of the 2026 World Cup`,
-    intro: `The ${rname.toLowerCase()} of the 2026 World Cup are played from ${dStart} to ${dEnd}. ${RS[round].en} Here are all the fixtures with kickoff times (Spain time), venues and results, updated automatically.`,
+    intro: `The ${rname.toLowerCase()} of the 2026 World Cup ${VERB} from ${dStart} to ${dEnd}. ${RS[round].en} Here are all the fixtures with kickoff times (Spain time), venues and results, updated automatically.`,
     live: 'live', upd: 'updated', matches: 'Matches', back: 'See the full bracket',
     faqH: 'FAQ',
     faq: [
@@ -69,7 +77,7 @@ const C = {
     title: `${rname} da Copa 2026: confrontos, horários e resultados`,
     desc: `${rname} da Copa 2026 de ${dStart} a ${dEnd}: todos os confrontos com horário (horário da Espanha), sede e resultado ao vivo. Atualiza sozinho.`,
     h1: `${rname} da Copa do Mundo 2026`,
-    intro: `As ${rname.toLowerCase()} da Copa 2026 acontecem de ${dStart} a ${dEnd}. ${RS[round].pt} Aqui estão todos os confrontos com horários (horário da Espanha), sedes e resultados, atualizados sozinhos.`,
+    intro: `As ${rname.toLowerCase()} da Copa 2026 ${VERB} de ${dStart} a ${dEnd}. ${RS[round].pt} Aqui estão todos os confrontos com horários (horário da Espanha), sedes e resultados, atualizados sozinhos.`,
     live: 'ao vivo', upd: 'atualizado', matches: 'Jogos', back: 'Ver o chaveamento completo',
     faqH: 'Perguntas frequentes',
     faq: [

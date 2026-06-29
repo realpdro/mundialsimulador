@@ -4,6 +4,7 @@ import { LANGS, type Lang, SCHEDULE, ES_NAME_TO_CODE, teamName, flagUrl } from '
 import { UI } from '../../i18n/ui';
 import { formatDay, spainTime, roundName, overnightNote, matchUrl, koMatchUrl } from '../../lib/site';
 import { resolveBracket } from '../../lib/bracket';
+import { phaseInfo, isPlayed } from '../../lib/phase';
 import RESULTS from '../../data/results.json';
 import MatchCard from '../../components/MatchCard.astro';
 
@@ -49,6 +50,20 @@ const byDay = new Map<string, Row[]>();
 for (const r of rows) { const d = (r.koSpain || r.date).slice(0, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d)!.push(r); }
 const days = [...byDay.keys()].sort();
 
+// Conciencia de fase: con la fase de grupos cerrada, el calendario debe liderar con lo que
+// queda por jugar y plegar lo ya disputado (no volcar el torneo entero desde el 11-jun).
+const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const { groupStageDone } = phaseInfo(BYPAIR as any);
+const pastDays = days.filter((d) => d < todayMadrid);
+const futureDays = days.filter((d) => d >= todayMadrid);
+const pendingCount = rows.filter((r) => !isPlayed(r.result as any)).length;
+const pastMatchesCount = pastDays.reduce((n, d) => n + byDay.get(d)!.length, 0);
+const CALX = {
+  es: { groupsDone: 'Fase de grupos finalizada.', pending: (n: number) => `${n} ${n === 1 ? 'partido' : 'partidos'} por jugar`, past: 'Ver resultados anteriores' },
+  en: { groupsDone: 'Group stage finished.', pending: (n: number) => `${n} ${n === 1 ? 'match' : 'matches'} to play`, past: 'See earlier results' },
+  pt: { groupsDone: 'Fase de grupos encerrada.', pending: (n: number) => `${n} ${n === 1 ? 'jogo' : 'jogos'} por disputar`, past: 'Ver resultados anteriores' },
+}[lang];
+
 const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
 const jsonLd = {
   '@context': 'https://schema.org', '@type': 'SportsEvent',
@@ -62,14 +77,14 @@ const jsonLd = {
 <Base lang={lang} title={ui.meta.calTitle} description={ui.meta.calDesc} path="calendario/" active="calendar" jsonLd={jsonLd}>
   <div class="page-head">
     <h1>{ui.cal.title}</h1>
-    <p>{ui.cal.intro}</p>
+    <p>{groupStageDone ? CALX.groupsDone + ' ' : ''}{ui.cal.intro}</p>
   </div>
-  <p class="cal-badge">{ui.cal.badge(rows.length)}{updatedAt ? ` · ${LBL.upd} ${updatedAt}` : ''}</p>
+  <p class="cal-badge">{groupStageDone ? CALX.pending(pendingCount) : ui.cal.badge(rows.length)}{updatedAt ? ` · ${LBL.upd} ${updatedAt}` : ''}</p>
 
-  {days.map((d) => {
+  {futureDays.map((d) => {
     const ms = byDay.get(d)!;
     return (
-      <div class="cal-day">
+      <div class={`cal-day${d === todayMadrid ? ' is-today' : ''}`}>
         <div class="cal-dhead">
           <span class="dnum">{formatDay(d, lang)}</span>
           <span class="dcount">{ms.length} {ms.length > 1 ? ui.cal.matchesOf : ui.cal.matchOf}</span>
@@ -82,4 +97,39 @@ const jsonLd = {
       </div>
     );
   })}
+
+  {pastDays.length > 0 && (
+    <details class="cal-past">
+      <summary>{CALX.past} · {pastMatchesCount}</summary>
+      {pastDays.map((d) => {
+        const ms = byDay.get(d)!;
+        return (
+          <div class="cal-day past">
+            <div class="cal-dhead">
+              <span class="dnum">{formatDay(d, lang)}</span>
+              <span class="dcount">{ms.length} {ms.length > 1 ? ui.cal.matchesOf : ui.cal.matchOf}</span>
+            </div>
+            <div class="cal-grid">
+              {ms.map((m) => (
+                <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} stadium={m.stadium} city={m.city} result={m.result} previewHref={m.previewHref} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </details>
+  )}
 </Base>
+
+<style>
+  .cal-day.is-today .cal-dhead { border-left:3px solid var(--green); padding-left:9px; }
+  .cal-day.is-today .dnum { color:var(--green); }
+  .cal-past { max-width:680px; margin:24px auto 0; }
+  .cal-past > summary { cursor:pointer; list-style:none; text-align:center; font-size:13.5px; font-weight:700; color:var(--muted); background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 16px; transition:.15s; }
+  .cal-past > summary::-webkit-details-marker { display:none; }
+  .cal-past > summary::after { content:' ▾'; color:var(--muted2); }
+  .cal-past[open] > summary { margin-bottom:18px; }
+  .cal-past[open] > summary::after { content:' ▴'; }
+  .cal-past > summary:hover { color:var(--txt); border-color:var(--accent); }
+  .cal-day.past { opacity:.72; }
+</style>

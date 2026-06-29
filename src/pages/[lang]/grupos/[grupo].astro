@@ -6,6 +6,7 @@ import { homeUrl, groupsUrl, teamUrl, spainDateLabel, spainTime, overnightNote, 
 import RESULTS from '../../../data/results.json';
 import MatchCard from '../../../components/MatchCard.astro';
 import { realStandings } from '../../../lib/standings';
+import { isPlayed } from '../../../lib/phase';
 
 export function getStaticPaths() {
   return LANGS.flatMap((lang) => LETTERS.map((L) => ({ params: { lang, grupo: L.toLowerCase() } })));
@@ -18,7 +19,15 @@ const teamNames = codes.map((c) => teamName(c, lang));
 const fixtures = SCHEDULE.groupStage
   .filter((m) => m.group === L)
   .sort((a, b) => (a.koSpain || a.date).localeCompare(b.koSpain || b.date));
-const standings = realStandings(L, (RESULTS as any).byPair);
+const byPair = (RESULTS as any).byPair;
+// Estado de ESTE grupo: cerrado si sus 6 fixtures están todos jugados; en directo si alguno está IN_PLAY.
+const groupResults = fixtures.map((m) => {
+  const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+  return a && b ? byPair[[a, b].slice().sort().join('-')] ?? null : null;
+});
+const groupClosed = fixtures.length > 0 && groupResults.every((r) => isPlayed(r));
+const groupLive = groupResults.some((r) => !!r?.live);
+const standings = realStandings(L, byPair);
 const ST = { es: 'Clasificación real', en: 'Live standings', pt: 'Classificação real' }[lang];
 const STN = { es: 'Calculada con los partidos ya jugados.', en: 'Based on matches played so far.', pt: 'Com base nos jogos já disputados.' }[lang];
 const TH = { es: 'Equipo', en: 'Team', pt: 'Seleção' }[lang];
@@ -42,10 +51,15 @@ const LIVE = {
   en: { suffix: ' · live', badge: 'Live standings · updated', tz: 'Spain time' },
   pt: { suffix: ' · ao vivo', badge: 'Classificação ao vivo · atualizada', tz: 'horário Espanha' },
 }[lang];
+const FIN = {
+  es: { suffix: ' · clasificación final', badge: 'Clasificación final', decided: `El Grupo ${L} ya se decidió: 1.º y 2.º pasan a los dieciseisavos.`, bracket: 'Ver el cuadro', qualified: 'Quién se ha clasificado' },
+  en: { suffix: ' · final standings', badge: 'Final standings', decided: `Group ${L} is decided: the top two advance to the round of 32.`, bracket: 'See the bracket', qualified: 'Who qualified' },
+  pt: { suffix: ' · classificação final', badge: 'Classificação final', decided: `O Grupo ${L} está decidido: 1.º e 2.º avançam às 16-avos.`, bracket: 'Ver o chaveamento', qualified: 'Quem se classificou' },
+}[lang];
 ---
 <Base
   lang={lang}
-  title={ui.meta.groupTitle(L) + (standings.played > 0 ? LIVE.suffix : '')}
+  title={ui.meta.groupTitle(L) + (groupClosed ? FIN.suffix : (standings.played > 0 ? LIVE.suffix : ''))}
   description={ui.group.intro(L, listTeams(teamNames, lang))}
   path={`grupos/${L.toLowerCase()}/`}
   active="groups"
@@ -55,9 +69,11 @@ const LIVE = {
   <p class="crumbs"><a href={homeUrl(lang)}>{ui.nav.home}</a> › <a href={groupsUrl(lang)}>{ui.nav.groups}</a> › {ui.common.group} {L}</p>
   <div class="page-head">
     <h1>{ui.group.h1(L)}</h1>
-    <p>{ui.group.intro(L, listTeams(teamNames, lang))}</p>
+    <p>{groupClosed ? FIN.decided + ' ' : ''}{ui.group.intro(L, listTeams(teamNames, lang))}</p>
   </div>
-  {standings.played > 0 && updatedAt && <p class="cal-badge">🟢 {LIVE.badge} {updatedAt}h · {LIVE.tz}</p>}
+  {groupClosed
+    ? <p class="cal-badge">✓ {FIN.badge}</p>
+    : (standings.played > 0 && updatedAt && <p class="cal-badge">🟢 {LIVE.badge} {updatedAt}h · {LIVE.tz}</p>)}
 
   <h2 class="section-h">{ui.group.teamsLabel}</h2>
   <div class="team-grid">
@@ -97,7 +113,13 @@ const LIVE = {
     })}
   </div>
 
-  <p style="text-align:center;margin-top:26px">
+  {groupClosed && (
+    <p style="text-align:center;margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn" href={`/${lang}/cuadro/`}>{FIN.bracket} →</a>
+      <a class="btn" href={`/${lang}/clasificados/`}>{FIN.qualified} →</a>
+    </p>
+  )}
+  <p style="text-align:center;margin-top:18px">
     <a class="btn primary lg" href={`/${lang}/simulador/`} data-astro-reload>{ui.group.simulate}</a>
   </p>
 </Base>

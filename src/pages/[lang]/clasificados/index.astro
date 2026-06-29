@@ -74,17 +74,17 @@ const faqList = {
   es: [
     { q: '¿Cuántos equipos pasan de la fase de grupos en el Mundial 2026?', a: 'Se clasifican 32: los 2 primeros de cada uno de los 12 grupos (24) más los 8 mejores terceros.' },
     { q: '¿Cómo se eligen los 8 mejores terceros?', a: 'Se comparan los 12 equipos que quedan terceros por puntos, diferencia de goles y goles a favor; los 8 mejores pasan a dieciseisavos.' },
-    { q: '¿Cuándo se sabe quién se clasifica a octavos?', a: 'Al terminar los 72 partidos de la fase de grupos (28 de junio de 2026). Esta página se actualiza sola con cada resultado.' },
+    { q: '¿Cuándo se sabe quién se clasifica a los dieciseisavos?', a: Q.allGroupsComplete ? 'Ya se sabe: la fase de grupos terminó el 28 de junio de 2026 y estas 32 selecciones disputan los dieciseisavos de final.' : 'Al terminar los 72 partidos de la fase de grupos (28 de junio de 2026). Esta página se actualiza sola con cada resultado.' },
   ],
   en: [
     { q: 'How many teams advance from the group stage at the 2026 World Cup?', a: '32 qualify: the top 2 of each of the 12 groups (24) plus the 8 best third-placed teams.' },
     { q: 'How are the 8 best third-placed teams chosen?', a: 'The 12 third-placed teams are compared by points, goal difference and goals scored; the best 8 reach the round of 32.' },
-    { q: 'When is it known who qualifies for the round of 16?', a: 'Once the 72 group-stage matches finish (28 June 2026). This page updates automatically with every result.' },
+    { q: 'When is it known who qualifies for the round of 32?', a: Q.allGroupsComplete ? 'It is already known: the group stage finished on 28 June 2026 and these 32 teams now play the round of 32.' : 'Once the 72 group-stage matches finish (28 June 2026). This page updates automatically with every result.' },
   ],
   pt: [
     { q: 'Quantas seleções avançam da fase de grupos na Copa 2026?', a: 'Classificam-se 32: os 2 primeiros de cada um dos 12 grupos (24) mais os 8 melhores terceiros.' },
     { q: 'Como são escolhidos os 8 melhores terceiros?', a: 'Os 12 terceiros colocados são comparados por pontos, saldo de gols e gols pró; os 8 melhores vão às 16-avos.' },
-    { q: 'Quando se sabe quem se classifica?', a: 'Quando terminam os 72 jogos da fase de grupos (28 de junho de 2026). Esta página atualiza sozinha a cada resultado.' },
+    { q: 'Quando se sabe quem se classifica?', a: Q.allGroupsComplete ? 'Já se sabe: a fase de grupos terminou em 28 de junho de 2026 e estas 32 seleções disputam as 16-avos de final.' : 'Quando terminam os 72 jogos da fase de grupos (28 de junho de 2026). Esta página atualiza sozinha a cada resultado.' },
   ],
 }[lang];
 const faqH = { es: 'Preguntas frecuentes', en: 'FAQ', pt: 'Perguntas frequentes' }[lang];

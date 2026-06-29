@@ -3,6 +3,7 @@ import Base from '../../../layouts/Base.astro';
 import { LANGS, type Lang, GROUPS, LETTERS, teamName, flagUrl } from '../../../data/tournament';
 import { UI } from '../../../i18n/ui';
 import { groupUrl, teamUrl } from '../../../lib/site';
+import { phaseInfo } from '../../../lib/phase';
 import RESULTS from '../../../data/results.json';
 import { realStandings } from '../../../lib/standings';
 
@@ -12,12 +13,40 @@ export function getStaticPaths() {
 const lang = Astro.params.lang as Lang;
 const ui = UI[lang];
 const BYPAIR = (RESULTS as any).byPair as Record<string, any>;
+const groupStageDone = phaseInfo(BYPAIR).groupStageDone;
+
+const COPY = {
+  es: {
+    titleSuffix: ' · clasificación final',
+    intro: 'La fase de grupos ya terminó: estas fueron las clasificaciones finales de los 12 grupos. Las 32 selecciones clasificadas disputan ahora los dieciseisavos.',
+    bracket: 'Ver el cuadro',
+    qualified: 'Quién se ha clasificado',
+  },
+  en: {
+    titleSuffix: ' · final standings',
+    intro: 'The group stage is over: these were the final standings of the 12 groups. The 32 qualified teams now play the round of 32.',
+    bracket: 'View the bracket',
+    qualified: 'Who has qualified',
+  },
+  pt: {
+    titleSuffix: ' · classificação final',
+    intro: 'A fase de grupos terminou: estas foram as classificações finais dos 12 grupos. As 32 seleções classificadas disputam agora os dezesseis avos.',
+    bracket: 'Ver o chaveamento',
+    qualified: 'Quem se classificou',
+  },
+}[lang];
 ---
-<Base lang={lang} title={ui.meta.groupsTitle} description={ui.meta.groupsDesc} path="grupos/" active="groups">
+<Base lang={lang} title={ui.meta.groupsTitle + (groupStageDone ? COPY.titleSuffix : '')} description={ui.meta.groupsDesc} path="grupos/" active="groups">
   <div class="page-head">
-    <h1>{ui.groups.title}</h1>
-    <p>{ui.groups.intro}</p>
+    <h1>{ui.groups.title}{groupStageDone ? COPY.titleSuffix : ''}</h1>
+    <p>{groupStageDone ? COPY.intro : ui.groups.intro}</p>
   </div>
+  {groupStageDone && (
+    <p style="text-align:center;margin:-4px auto 20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn primary" href={`/${lang}/cuadro/`}>{COPY.bracket} →</a>
+      <a class="btn" href={`/${lang}/clasificados/`}>{COPY.qualified} →</a>
+    </p>
+  )}
   <div class="tile-grid">
     {LETTERS.map((L) => {
       const st = realStandings(L, BYPAIR);

@@ -36,9 +36,9 @@ const crumbJsonLd = breadcrumbs && breadcrumbs.length
   : null;
 const navLinks = [
   { key: 'simulator', href: `/${lang}/simulador/`, label: lang === 'en' ? 'Simulator' : 'Simulador' },
-  { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
-  { key: 'qualified', href: `/${lang}/clasificados/`, label: lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados' },
   { key: 'bracket', href: `/${lang}/cuadro/`, label: lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro' },
+  { key: 'qualified', href: `/${lang}/clasificados/`, label: lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados' },
+  { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
   { key: 'calendar', href: calUrl(lang), label: ui.nav.calendar },
   { key: 'scorers', href: `/${lang}/goleadores/`, label: lang === 'en' ? 'Scorers' : lang === 'pt' ? 'Artilheiros' : 'Goleadores' },
 ];

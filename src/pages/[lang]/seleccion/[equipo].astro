@@ -71,6 +71,7 @@ const C = {
   en: { nextH: '⏱️ Next match', nextLine: next ? `${name}'s next match is against ${next.opp}, on ${day} at ${time} (Spain time)${next.stadium ? `, at ${next.stadium} (${next.city})` : ''}.` : `${name} have no more matches at the 2026 World Cup.`, seeMatch: 'See the match →', koH: '🏆 Knockout matches', faqH: 'FAQ', topScorerLine: topScorer ? `${name}'s top scorer in the tournament is ${topScorer.name}, with ${topScorer.goals} ${topScorer.goals === 1 ? 'goal' : 'goals'}.` : '' },
   pt: { nextH: '⏱️ Próximo jogo', nextLine: next ? `O próximo jogo de ${name} é contra ${next.opp}, em ${day} às ${time} (horário da Espanha)${next.stadium ? `, em ${next.stadium} (${next.city})` : ''}.` : `${name} não tem mais jogos na Copa 2026.`, seeMatch: 'Ver o jogo →', koH: '🏆 Jogos do mata-mata', faqH: 'Perguntas frequentes', topScorerLine: topScorer ? `O artilheiro de ${name} no torneio é ${topScorer.name}, com ${topScorer.goals} ${topScorer.goals === 1 ? 'gol' : 'gols'}.` : '' },
 }[lang];
+const GRPH = { es: 'Fase de grupos', en: 'Group stage', pt: 'Fase de grupos' }[lang];
 
 const faq = [
   { q: { es: `¿En qué grupo está ${name} en el Mundial 2026?`, en: `What group is ${name} in at the 2026 World Cup?`, pt: `Em que grupo está ${name} na Copa 2026?` }[lang], a: { es: `${name} juega en el Grupo ${L}.`, en: `${name} play in Group ${L}.`, pt: `${name} joga no Grupo ${L}.` }[lang] },
@@ -109,22 +110,13 @@ const jsonLd = [
     <span class="fact">📅 <b>{fixtures.length}</b> {ui.cal.matchesOf}</span>
     <a class="fact" href={groupUrl(lang, L)} style="color:var(--accent)">→ {ui.common.group} {L}</a>
   </div>
-  <p style="text-align:center;margin-bottom:20px"><a class="btn" href={`${teamUrl(lang, code)}escenarios/`}>{ui.scenarios.link(name)}</a></p>
+  {!groupComplete && <p style="text-align:center;margin-bottom:20px"><a class="btn" href={`${teamUrl(lang, code)}escenarios/`}>{ui.scenarios.link(name)}</a></p>}
 
   {next && (
     <div style="max-width:680px;margin:0 auto 22px;background:linear-gradient(90deg,rgba(34,197,94,.1),rgba(56,189,248,.1));border:1px solid var(--line);border-radius:12px;padding:13px 16px;line-height:1.5">
       <b>{C.nextH}</b><br />{C.nextLine} {next.href && <a href={next.href} style="color:var(--accent);font-weight:700;white-space:nowrap">{C.seeMatch}</a>}
     </div>
   )}
-
-  <h2 class="section-h">{ui.team.fixtures}</h2>
-  <div class="cal-grid">
-    {fixtures.map((m) => {
-      const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
-      const result = a && b ? (RESULTS as any).byPair[[a, b].sort().join('-')] ?? null : null;
-      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} previewHref={matchUrl(lang, m)} />;
-    })}
-  </div>
 
   {koFixtures.length > 0 && (
     <>
@@ -137,6 +129,15 @@ const jsonLd = [
       </div>
     </>
   )}
+
+  <h2 class="section-h">{groupComplete ? GRPH : ui.team.fixtures}</h2>
+  <div class="cal-grid">
+    {fixtures.map((m) => {
+      const a = ES_NAME_TO_CODE[m.teamA], b = ES_NAME_TO_CODE[m.teamB];
+      const result = a && b ? (RESULTS as any).byPair[[a, b].sort().join('-')] ?? null : null;
+      return <MatchCard lang={lang} label={spainDateLabel(m.koSpain, m.date, lang)} koSpain={m.koSpain} koLocal={m.koLocal} a={a} b={b} stadium={m.stadium} city={m.city} result={result} previewHref={matchUrl(lang, m)} />;
+    })}
+  </div>
 
   {teamScorers.length > 0 && (
     <>

@@ -4,6 +4,7 @@ import { LANGS, type Lang, SCHEDULE, teamName, flagUrl } from '../../../data/tou
 import { UI } from '../../../i18n/ui';
 import { homeUrl, groupsUrl, teamUrl, roundName, roundUrl, koMatchUrl, spainDateLabel, spainTime } from '../../../lib/site';
 import { resolveBracket } from '../../../lib/bracket';
+import { phaseInfo } from '../../../lib/phase';
 import RESULTS from '../../../data/results.json';
 
 export function getStaticPaths() {
@@ -19,27 +20,40 @@ const updatedAt = (RESULTS as any).updatedAt
   ? new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang === 'pt' ? 'pt-BR' : 'es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' }).format(new Date((RESULTS as any).updatedAt))
   : null;
 const anyResult = Object.values(byPair).some((r: any) => r && (r.scores || r.live));
+const groupStageDone = phaseInfo(byPair).groupStageDone;
 
 const C = {
   es: {
     title: 'Cuadro del Mundial 2026 en directo — de dieciseisavos a la final',
-    desc: 'El cuadro de las eliminatorias del Mundial 2026 que se rellena solo con los resultados reales: dieciseisavos, octavos, cuartos, semifinales y final. Cruces y horarios.',
+    desc: groupStageDone
+      ? 'El cuadro completo de las eliminatorias del Mundial 2026, ya con las 32 selecciones clasificadas: dieciseisavos, octavos, cuartos, semifinales y final. Cruces, horarios y resultados en directo.'
+      : 'El cuadro de las eliminatorias del Mundial 2026 que se rellena solo con los resultados reales: dieciseisavos, octavos, cuartos, semifinales y final. Cruces y horarios.',
     h1: 'Cuadro del Mundial 2026',
-    intro: 'El cuadro completo de la fase eliminatoria. Se rellena automáticamente con los equipos reales según avanzan los grupos y se juegan las rondas. Hasta entonces verás de dónde sale cada plaza (1.º A, 2.º B, mejor 3.º…).',
+    intro: groupStageDone
+      ? 'El cuadro completo de las eliminatorias del Mundial 2026, ya con las 32 selecciones clasificadas. Los dieciseisavos están en juego y cada ronda se actualiza en directo.'
+      : 'El cuadro completo de la fase eliminatoria. Se rellena automáticamente con los equipos reales según avanzan los grupos y se juegan las rondas. Hasta entonces verás de dónde sale cada plaza (1.º A, 2.º B, mejor 3.º…).',
     upd: 'actualizado', live: 'en directo', pen: 'pen.', match: 'P',
   },
   en: {
     title: '2026 World Cup bracket — live knockout stage (round of 32 to final)',
-    desc: 'The 2026 World Cup knockout bracket that fills automatically with real results: round of 32, round of 16, quarter-finals, semi-finals and final. Fixtures and times.',
+    desc: groupStageDone
+      ? 'The complete 2026 World Cup knockout bracket, with all 32 qualified teams: round of 32, round of 16, quarter-finals, semi-finals and final. Fixtures, times and live results.'
+      : 'The 2026 World Cup knockout bracket that fills automatically with real results: round of 32, round of 16, quarter-finals, semi-finals and final. Fixtures and times.',
     h1: '2026 World Cup bracket',
-    intro: 'The full knockout bracket. It fills automatically with the real teams as the groups progress and the rounds are played. Until then you can see where each spot comes from (1st A, 2nd B, best 3rd…).',
+    intro: groupStageDone
+      ? 'The complete 2026 World Cup knockout bracket, now with all 32 qualified teams. The round of 32 is under way and every round updates live.'
+      : 'The full knockout bracket. It fills automatically with the real teams as the groups progress and the rounds are played. Until then you can see where each spot comes from (1st A, 2nd B, best 3rd…).',
     upd: 'updated', live: 'live', pen: 'pens', match: 'M',
   },
   pt: {
     title: 'Chaveamento da Copa 2026 — mata-mata ao vivo (16-avos à final)',
-    desc: 'O chaveamento do mata-mata da Copa 2026 que se preenche sozinho com os resultados reais: 16-avos, oitavas, quartas, semis e final. Confrontos e horários.',
+    desc: groupStageDone
+      ? 'O chaveamento completo do mata-mata da Copa 2026, já com as 32 seleções classificadas: 16-avos, oitavas, quartas, semis e final. Confrontos, horários e resultados ao vivo.'
+      : 'O chaveamento do mata-mata da Copa 2026 que se preenche sozinho com os resultados reais: 16-avos, oitavas, quartas, semis e final. Confrontos e horários.',
     h1: 'Chaveamento da Copa 2026',
-    intro: 'O chaveamento completo da fase eliminatória. Preenche-se automaticamente com as seleções reais conforme os grupos avançam e as rodadas são jogadas. Até lá você vê de onde sai cada vaga (1.º A, 2.º B, melhor 3.º…).',
+    intro: groupStageDone
+      ? 'O chaveamento completo do mata-mata da Copa 2026, já com as 32 seleções classificadas. Os 16-avos estão em jogo e cada rodada se atualiza ao vivo.'
+      : 'O chaveamento completo da fase eliminatória. Preenche-se automaticamente com as seleções reais conforme os grupos avançam e as rodadas são jogadas. Até lá você vê de onde sai cada vaga (1.º A, 2.º B, melhor 3.º…).',
     upd: 'atualizado', live: 'ao vivo', pen: 'pên.', match: 'P',
   },
 }[lang];
