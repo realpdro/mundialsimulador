@@ -49,7 +49,7 @@ const livePhpPath = join(distDir, 'live.php');
 if (existsSync(livePhpPath)) {
   const src = readFileSync(livePhpPath, 'utf8');
   const fdKey = env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY || '';
-  if (src.includes('__FD_KEY__') && fdKey) { writeFileSync(livePhpPath, src.replace('__FD_KEY__', fdKey)); console.log('[live.php] API key inyectada (server-side).'); }
+  if (src.includes('__FD_KEY__') && fdKey) { writeFileSync(livePhpPath, src.split('__FD_KEY__').join(fdKey)); console.log('[live.php] API key inyectada (server-side).'); }
 }
 const toRel = (abs) => abs.slice(distDir.length + 1).split('\\').join('/');
 const local = {};
@@ -79,6 +79,9 @@ try {
 
     const rels = Object.keys(local).sort();
     const changed = rels.filter((r) => local[r] !== remote[r]);
+    // live.php lleva la API key inyectada: fuérzalo SIEMPRE para que un manifiesto desincronizado
+    // no deje en el servidor una copia con el placeholder __FD_KEY__ (token inválido → feed rancio).
+    if (local['live.php'] && !changed.includes('live.php')) changed.push('live.php');
     console.log(`📦 ${rels.length} archivos · ${changed.length} a subir (${fullMode || !Object.keys(remote).length ? 'completo' : 'incremental'}).`);
 
     const finalManifest = { ...remote };
