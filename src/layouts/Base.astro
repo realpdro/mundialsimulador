@@ -46,6 +46,7 @@ const navLinks = [
 <html lang={ui.htmlLang}>
 <head>
   <meta charset="utf-8" />
+  <script is:inline>var h=document.documentElement;h.classList.add('js');try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('rm');}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
   <meta name="description" content={description} />
@@ -123,5 +124,8 @@ const navLinks = [
       {ui.footer.disclaimer}
     </footer>
   </div>
+  <script is:inline>
+    (function(){var h=document.documentElement;if(h.classList.contains('rm')||!('IntersectionObserver' in window))return;var sel='.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa';var els=[].slice.call(document.querySelectorAll(sel));if(!els.length)return;var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.06,rootMargin:'0px 0px -40px 0px'});els.forEach(function(el){io.observe(el);});setTimeout(function(){els.forEach(function(el){el.classList.add('in');});},1600);})();
+  </script>
 </body>
 </html>
