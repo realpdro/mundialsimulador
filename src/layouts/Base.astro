@@ -3,7 +3,7 @@ import '../styles/global.css';
 import { LANGS, type Lang } from '../data/tournament';
 import { UI } from '../i18n/ui';
 import { homeUrl, calUrl, groupsUrl } from '../lib/site';
-import LivePoll from '../components/LivePoll.astro';
+import TopTicker from '../components/TopTicker.astro';
 
 interface Props {
   lang: Lang;
@@ -70,8 +70,11 @@ const navLinks = [
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImg} />
 
-  <meta name="theme-color" content="#0a0f1c" />
+  <meta name="theme-color" content="#0d0f14" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" />
   {jsonLd && (
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   )}
@@ -81,6 +84,7 @@ const navLinks = [
   )}
 </head>
 <body>
+  <TopTicker lang={lang} />
   <div class="wrap">
     <header class="site-head">
       <a class="logo" href={homeUrl(lang)}>
@@ -99,7 +103,6 @@ const navLinks = [
       </nav>
     </header>
 
-    <LivePoll lang={lang} />
     <slot />
 
     <footer class="site-foot">

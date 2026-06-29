@@ -1,0 +1,68 @@
+---
+// Franja superior de marcadores (estilo SofaScore): partidos de hoy/próximos como chips
+// con scroll horizontal; los EN VIVO laten en rojo. Incluye la config + arranque del motor
+// live.ts, que cada ~35s actualiza estos chips + tarjetas + clasificaciones sin recargar.
+import { SCHEDULE, ES_NAME_TO_CODE, TEAMS, teamName, GROUPS, type Lang } from '../data/tournament';
+import { resolveBracket } from '../lib/bracket';
+import RESULTS from '../data/results.json';
+
+const { lang } = Astro.props as { lang: Lang };
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const koByNo: Record<number, any> = Object.fromEntries(resolveBracket(byPair, lang).rounds.flatMap((r) => r.matches.map((m) => [m.m, m])));
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+interface C { a: string | null; b: string | null; koSpain: string | null; day: string; r: any; }
+const all: C[] = [];
+SCHEDULE.groupStage.forEach((m) => { const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null; all.push({ a, b, koSpain: m.koSpain, day: (m.koSpain || m.date).slice(0, 10), r: a && b ? byPair[[a, b].sort().join('-')] ?? null : null }); });
+SCHEDULE.knockout.forEach((m) => { const bm = koByNo[m.matchNo]; const a = bm?.a.code ?? null, b = bm?.b.code ?? null; all.push({ a, b, koSpain: m.koSpain, day: (m.koSpain || m.date).slice(0, 10), r: a && b ? byPair[[a, b].sort().join('-')] ?? null : null }); });
+all.sort((x, y) => (x.koSpain || x.day).localeCompare(y.koSpain || y.day));
+const live = all.filter((c) => c.r?.live);
+let chips = [...live, ...all.filter((c) => c.day >= today && !c.r?.live)].slice(0, 16);
+if (!chips.length) chips = all.slice(-16);
+
+const cfg = {
+  lang, groups: GROUPS,
+  teams: Object.fromEntries(Object.keys(TEAMS).map((c) => [c, [teamName(c, lang), TEAMS[c].iso]])),
+  labels: { live: { es: 'EN JUEGO', en: 'LIVE', pt: 'AO VIVO' }[lang], fin: 'FT', hoyHref: `/${lang}/partidos-de-hoy/` },
+};
+const fmt = (c: C) => {
+  const sa = c.r?.scores && c.a ? c.r.scores[c.a] : null, sb = c.r?.scores && c.b ? c.r.scores[c.b] : null;
+  const has = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
+  return { sa, sb, has, lv: !!c.r?.live, pair: c.a && c.b ? [c.a, c.b].slice().sort().join('-') : undefined, time: c.koSpain ? c.koSpain.slice(11, 16) : '' };
+};
+---
+{chips.length > 0 && (
+  <div class="tkbar">
+    <a class="tk-live-lbl" href={`/${lang}/partidos-de-hoy/`}>{live.length > 0 ? '🔴' : '⚽'}</a>
+    <div class="tkscroll">
+      {chips.map((c) => {
+        const f = fmt(c);
+        return (
+          <div class={f.lv ? 'tk-chip live' : 'tk-chip'} data-pair={f.pair} data-a={c.a ?? undefined} data-b={c.b ?? undefined}>
+            <span class={f.lv ? 'tk-stat live' : 'tk-stat'}>{f.lv ? '•' : f.has ? 'FT' : f.time}</span>
+            {c.a && <img class="tkf" width="17" height="12" loading="lazy" src={`/flags/${TEAMS[c.a].iso}.webp`} alt="" />}
+            <span class="tk-sc">{f.has ? `${f.sa}-${f.sb}` : '-'}</span>
+            {c.b && <img class="tkf" width="17" height="12" loading="lazy" src={`/flags/${TEAMS[c.b].iso}.webp`} alt="" />}
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+<script type="application/json" id="live-cfg" is:inline set:html={JSON.stringify(cfg)}></script>
+<script>
+  import { startLive } from '../scripts/live';
+  startLive();
+</script>
+<style>
+  .tkbar { display:flex; align-items:center; gap:8px; background:rgba(13,15,20,.85); backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--line); padding:6px 12px; position:sticky; top:0; z-index:60; }
+  .tk-live-lbl { flex:0 0 auto; font-size:13px; filter:saturate(1.2); }
+  .tkscroll { display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; }
+  .tkscroll::-webkit-scrollbar { display:none; }
+  .tk-chip { display:flex; align-items:center; gap:6px; flex:0 0 auto; background:var(--card2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; white-space:nowrap; }
+  .tk-chip.live { border-color:rgba(255,90,95,.5); box-shadow:0 0 0 1px rgba(255,90,95,.25),0 0 12px rgba(255,90,95,.18); }
+  .tk-stat { font-size:10.5px; color:var(--muted2); font-weight:600; min-width:30px; text-align:center; }
+  .tk-stat.live { color:var(--red); font-weight:800; animation:livepulse 1.4s infinite; }
+  .tkf { border-radius:2px; box-shadow:0 0 0 1px rgba(255,255,255,.08); }
+  .tk-sc { font-size:12.5px; font-weight:800; color:var(--txt); font-variant-numeric:tabular-nums; min-width:24px; text-align:center; }
+</style>

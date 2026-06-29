@@ -35,31 +35,32 @@ function standings(codes: string[], byPair: Record<string, Entry>) {
   return { order: order.map((c) => st[c]), played };
 }
 
-function flagImg(iso: string) {
-  return `<img src="/flags/${iso}.webp" width="20" height="14" alt="" loading="lazy" style="border-radius:2px;vertical-align:-2px">`;
-}
-
-function renderBanner(byPair: Record<string, Entry>, c: Cfg) {
-  const banner = document.getElementById('live-banner');
-  if (!banner) return;
-  const keys = Object.keys(byPair).filter((k) => byPair[k] && byPair[k].live);
-  if (!keys.length) { banner.hidden = true; banner.innerHTML = ''; return; }
-  const items = keys.map((k) => {
-    const v = byPair[k], p = k.split('-'), a = p[0], b = p[1];
-    const sa = v.scores ? v.scores[a] : '', sb = v.scores ? v.scores[b] : '';
-    const ta = c.teams[a] || [a, ''], tb = c.teams[b] || [b, ''];
-    const mins = v.minute != null ? ` <span class="lb-min">${v.minute}'</span>` : '';
-    return `<a class="lb-m" href="${c.labels.hoyHref}">${flagImg(ta[1])} ${ta[0]} <b>${sa}-${sb}</b> ${tb[0]} ${flagImg(tb[1])}${mins}</a>`;
-  }).join('');
-  banner.innerHTML = `<div class="lb-in"><span class="lb-t">🔴 ${c.labels.live}</span>${items}</div>`;
-  banner.hidden = false;
+function updateTicker(byPair: Record<string, Entry>, _c: Cfg) {
+  document.querySelectorAll<HTMLElement>('.tk-chip[data-pair]').forEach((chip) => {
+    const v = byPair[chip.getAttribute('data-pair') || ''];
+    if (!v) return;
+    const a = chip.getAttribute('data-a'), b = chip.getAttribute('data-b');
+    const sc = chip.querySelector('.tk-sc');
+    if (sc && v.scores && a && b) sc.textContent = `${v.scores[a]}-${v.scores[b]}`;
+    const stat = chip.querySelector('.tk-stat');
+    if (stat) {
+      if (v.live) { stat.textContent = v.minute != null ? `${v.minute}'` : '•'; stat.className = 'tk-stat live'; chip.classList.add('live'); }
+      else if (v.scores) { stat.textContent = 'FT'; stat.className = 'tk-stat'; }
+    }
+  });
 }
 
 function setScore(teamEl: Element, val: number | undefined) {
   if (val == null) return;
   let sc = teamEl.querySelector('.cm-score');
   if (!sc) { sc = document.createElement('b'); sc.className = 'cm-score'; teamEl.appendChild(sc); }
-  sc.textContent = String(val);
+  const next = String(val);
+  if (sc.textContent !== next) {
+    sc.textContent = next;
+    sc.classList.remove('flash');
+    void (sc as HTMLElement).offsetWidth;
+    sc.classList.add('flash');
+  }
 }
 
 function updateCards(byPair: Record<string, Entry>, c: Cfg) {
@@ -132,7 +133,7 @@ export function startLive() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d || !d.byPair) return;
-        renderBanner(d.byPair, c!);
+        updateTicker(d.byPair, c!);
         updateCards(d.byPair, c!);
         updateStandings(d.byPair, c!);
       })
