@@ -1,64 +1,92 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Simulator from '../../components/Simulator.astro';
-import { LANGS, type Lang, GROUPS, LETTERS, teamName } from '../../data/tournament';
+import { LANGS, type Lang, GROUPS, LETTERS, SCHEDULE, ES_NAME_TO_CODE, teamName } from '../../data/tournament';
 import { UI } from '../../i18n/ui';
-import { calUrl, groupsUrl, groupUrl, listTeams } from '../../lib/site';
+import { calUrl, groupsUrl, groupUrl, roundName, matchUrl, koMatchUrl, formatDay } from '../../lib/site';
+import { resolveBracket } from '../../lib/bracket';
+import RESULTS from '../../data/results.json';
+import MatchCard from '../../components/MatchCard.astro';
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({ params: { lang } }));
 }
 const lang = Astro.params.lang as Lang;
 const ui = UI[lang];
-const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: ui.brand.title,
-  url: `${site}/${lang}/`,
-  applicationCategory: 'SportsApplication',
-  operatingSystem: 'Web',
-  inLanguage: ui.htmlLang,
-  description: ui.meta.homeDesc,
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-};
+const byPair = ((RESULTS as any).byPair || {}) as Record<string, any>;
+const koByNo: Record<number, any> = Object.fromEntries(resolveBracket(byPair, lang).rounds.flatMap((r) => r.matches.map((m) => [m.m, { ...m, round: r.round }])));
+const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+interface Row { koSpain: string | null; koLocal: string | null; label: string; ko: boolean; a: string | null; b: string | null; aLabel: string | null; bLabel: string | null; result: any; href: string | null; day: string; }
+const rows: Row[] = [];
+SCHEDULE.groupStage.forEach((m) => {
+  const a = ES_NAME_TO_CODE[m.teamA] ?? null, b = ES_NAME_TO_CODE[m.teamB] ?? null;
+  rows.push({ koSpain: m.koSpain, koLocal: m.koLocal, label: `${ui.common.group} ${m.group}`, ko: false, a, b, aLabel: null, bLabel: null, result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null, href: matchUrl(lang, m), day: (m.koSpain || m.date).slice(0, 10) });
+});
+SCHEDULE.knockout.forEach((m) => {
+  const bm = koByNo[m.matchNo]; const a = bm?.a.code ?? null, b = bm?.b.code ?? null;
+  rows.push({ koSpain: m.koSpain, koLocal: m.koLocal, label: roundName(lang, m.round), ko: true, a, b, aLabel: a ? null : (bm?.a.label ?? null), bLabel: b ? null : (bm?.b.label ?? null), result: a && b ? byPair[[a, b].sort().join('-')] ?? null : null, href: koMatchUrl(lang, m.matchNo), day: (m.koSpain || m.date).slice(0, 10) });
+});
+rows.sort((x, y) => (x.koSpain || x.day).localeCompare(y.koSpain || y.day));
+let dayShown = todayMadrid;
+let today = rows.filter((r) => r.day === todayMadrid);
+if (!today.length) { const next = rows.find((r) => r.day > todayMadrid); if (next) { dayShown = next.day; today = rows.filter((r) => r.day === dayShown); } }
+const isToday = rows.some((r) => r.day === todayMadrid);
+const dayLabel = formatDay(dayShown, lang);
+
+const C = {
+  es: { title: 'Resultados del Mundial 2026 en directo · marcadores y clasificación', desc: 'Marcadores en vivo del Mundial 2026: partidos de hoy, resultados, clasificación de los grupos, cuadro de eliminatorias y máximos goleadores. Todo en directo y se actualiza solo.', h1: 'Mundial 2026 en directo', intro: 'Resultados, partidos de hoy, clasificación y cuadro de eliminatorias — en vivo y se actualiza solo.', todayH: isToday ? `Partidos de hoy · ${dayLabel}` : `Próximos partidos · ${dayLabel}`, seeCal: 'Calendario completo', groupsH: 'Grupos del Mundial 2026', simH: '¿Y tú, cómo crees que acaba?', simSub: 'Predice todos los partidos, monta el cuadro y descubre tu campeón.', simCta: 'Abrir el simulador' },
+  en: { title: '2026 World Cup live scores · results and standings', desc: 'Live scores of the 2026 World Cup: today\'s matches, results, group standings, knockout bracket and top scorers. All live and updating automatically.', h1: '2026 World Cup live', intro: 'Results, today\'s matches, standings and the knockout bracket — live and updating automatically.', todayH: isToday ? `Today's matches · ${dayLabel}` : `Next matches · ${dayLabel}`, seeCal: 'Full schedule', groupsH: '2026 World Cup groups', simH: 'How do you think it ends?', simSub: 'Predict every match, build the bracket and find your champion.', simCta: 'Open the simulator' },
+  pt: { title: 'Resultados da Copa 2026 ao vivo · placares e classificação', desc: 'Placares ao vivo da Copa 2026: jogos de hoje, resultados, classificação dos grupos, chaveamento do mata-mata e artilheiros. Tudo ao vivo e atualiza sozinho.', h1: 'Copa 2026 ao vivo', intro: 'Resultados, jogos de hoje, classificação e chaveamento — ao vivo e atualiza sozinho.', todayH: isToday ? `Jogos de hoje · ${dayLabel}` : `Próximos jogos · ${dayLabel}`, seeCal: 'Calendário completo', groupsH: 'Grupos da Copa 2026', simH: 'Como você acha que termina?', simSub: 'Preveja todos os jogos, monte o chaveamento e ache seu campeão.', simCta: 'Abrir o simulador' },
+}[lang];
+
 const HUB = {
-  es: { h: 'Sigue el Mundial 2026 en directo', items: [['clasificados', '✅ Quién se clasifica'], ['cuadro', '🏆 Cuadro de eliminatorias'], ['partidos-de-hoy', '📅 Partidos de hoy'], ['goleadores', '⚽ Máximos goleadores']] },
-  en: { h: 'Follow the 2026 World Cup live', items: [['clasificados', '✅ Who qualifies'], ['cuadro', '🏆 Knockout bracket'], ['partidos-de-hoy', "📅 Today's matches"], ['goleadores', '⚽ Top scorers']] },
-  pt: { h: 'Acompanhe a Copa 2026 ao vivo', items: [['clasificados', '✅ Quem se classifica'], ['cuadro', '🏆 Chaveamento'], ['partidos-de-hoy', '📅 Jogos de hoje'], ['goleadores', '⚽ Artilheiros']] },
+  es: [['clasificados', 'Quién se clasifica', 'ti-checks'], ['cuadro', 'Cuadro de eliminatorias', 'ti-trophy'], ['goleadores', 'Máximos goleadores', 'ti-ball-football'], ['calendario', 'Calendario completo', 'ti-calendar']],
+  en: [['clasificados', 'Who qualifies', 'ti-checks'], ['cuadro', 'Knockout bracket', 'ti-trophy'], ['goleadores', 'Top scorers', 'ti-ball-football'], ['calendario', 'Full schedule', 'ti-calendar']],
+  pt: [['clasificados', 'Quem se classifica', 'ti-checks'], ['cuadro', 'Chaveamento', 'ti-trophy'], ['goleadores', 'Artilheiros', 'ti-ball-football'], ['calendario', 'Calendário completo', 'ti-calendar']],
 }[lang];
 ---
-<Base lang={lang} title={ui.meta.homeTitle} description={ui.meta.homeDesc} path="" active="home" jsonLd={jsonLd}>
-  <section class="hero">
-    <h1>{ui.hero.h1}</h1>
-    <p>{ui.hero.sub}</p>
-  </section>
+<Base lang={lang} title={C.title} description={C.desc} path="" active="home">
+  <div class="page-head" style="padding-bottom:14px"><h1>{C.h1}</h1><p>{C.intro}</p></div>
 
-  <Simulator lang={lang} />
-
-  <section class="prose">
-    <h2>{HUB.h}</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
-      {HUB.items.map(([slug, label]) => (<a href={`/${lang}/${slug}/`} style="display:block;background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:inherit;font-weight:700">{label}</a>))}
-    </div>
-  </section>
-
-  <section class="prose">
-    <h2>{ui.groups.title}</h2>
-    <p>{ui.groups.intro}</p>
-    <div class="tile-grid">
-      {LETTERS.map((L) => (
-        <a class="tile" href={groupUrl(lang, L)}>
-          <div class="tl-head"><span class="tag">{L}</span> {ui.common.group} {L}</div>
-          {GROUPS[L].map((code) => (
-            <div class="tl-team">{teamName(code, lang)}</div>
-          ))}
-        </a>
+  <h2 class="section-h" style="text-align:center">{C.todayH}</h2>
+  {today.length > 0 && (
+    <div class="cal-grid">
+      {today.map((m) => (
+        <MatchCard lang={lang} label={m.label} ko={m.ko} koSpain={m.koSpain} koLocal={m.koLocal} a={m.a} b={m.b} aLabel={m.aLabel} bLabel={m.bLabel} result={m.result} previewHref={m.href} />
       ))}
     </div>
+  )}
+  <p style="text-align:center;margin-top:14px"><a class="btn" href={calUrl(lang)}>{C.seeCal} →</a></p>
 
-    <h2>{ui.cal.title}</h2>
-    <p>{ui.cal.intro}</p>
-    <p><a href={calUrl(lang)}>→ {ui.nav.calendar}</a> · <a href={groupsUrl(lang)}>{ui.nav.groups}</a></p>
-  </section>
+  <div class="hub-grid">
+    {HUB.map(([slug, label]) => (
+      <a class="hub-link" href={`/${lang}/${slug}/`}>{label}</a>
+    ))}
+  </div>
+
+  <a class="sim-promo" href={`/${lang}/simulador/`}>
+    <div><b>{C.simH}</b><span>{C.simSub}</span></div>
+    <span class="btn primary">{C.simCta}</span>
+  </a>
+
+  <h2 class="section-h">{C.groupsH}</h2>
+  <div class="tile-grid">
+    {LETTERS.map((L) => (
+      <a class="tile" href={groupUrl(lang, L)}>
+        <div class="tl-head"><span class="tag">{L}</span> {ui.common.group} {L}</div>
+        {GROUPS[L].map((code) => (<div class="tl-team">{teamName(code, lang)}</div>))}
+      </a>
+    ))}
+  </div>
 </Base>
+
+<style>
+  .hub-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; max-width:680px; margin:22px auto 0; }
+  .hub-link { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; color:var(--txt); font-weight:600; font-size:14px; }
+  .hub-link:hover { border-color:var(--accent); background:var(--card2); }
+  .sim-promo { display:flex; align-items:center; gap:16px; max-width:680px; margin:14px auto 0; background:linear-gradient(100deg,rgba(34,197,94,.12),rgba(56,189,248,.1)); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--txt); }
+  .sim-promo div { flex:1; display:flex; flex-direction:column; gap:3px; }
+  .sim-promo b { font-size:15px; }
+  .sim-promo span { font-size:13px; color:var(--muted); }
+  .sim-promo .btn { white-space:nowrap; }
+</style>

@@ -3,7 +3,7 @@ import type { Lang } from '../data/tournament';
 const es = {
   htmlLang: 'es',
   brand: { title: 'Simulador Mundial 2026', tagline: 'México · EE.UU. · Canadá · 48 selecciones' },
-  nav: { home: 'Simulador', calendar: 'Calendario', groups: 'Grupos', teams: 'Selecciones' },
+  nav: { home: 'Resultados', calendar: 'Calendario', groups: 'Grupos', teams: 'Selecciones' },
   common: {
     group: 'Grupo', points: 'Pts', pj: 'PJ', w: 'G', d: 'E', l: 'P', gd: 'DG', gf: 'GF',
     tbd: 'Por definir', vs: 'vs', passes: 'pasa', repechage: 'repesca', out: 'fuera',
@@ -98,7 +98,7 @@ export type UIShape = typeof es;
 const en: UIShape = {
   htmlLang: 'en',
   brand: { title: '2026 World Cup Simulator', tagline: 'Mexico · USA · Canada · 48 teams' },
-  nav: { home: 'Simulator', calendar: 'Schedule', groups: 'Groups', teams: 'Teams' },
+  nav: { home: 'Results', calendar: 'Schedule', groups: 'Groups', teams: 'Teams' },
   common: {
     group: 'Group', points: 'Pts', pj: 'P', w: 'W', d: 'D', l: 'L', gd: 'GD', gf: 'GF',
     tbd: 'To be decided', vs: 'vs', passes: 'advances', repechage: 'play-off', out: 'out',
@@ -191,7 +191,7 @@ const en: UIShape = {
 const pt: UIShape = {
   htmlLang: 'pt',
   brand: { title: 'Simulador Copa 2026', tagline: 'México · EUA · Canadá · 48 seleções' },
-  nav: { home: 'Simulador', calendar: 'Calendário', groups: 'Grupos', teams: 'Seleções' },
+  nav: { home: 'Resultados', calendar: 'Calendário', groups: 'Grupos', teams: 'Seleções' },
   common: {
     group: 'Grupo', points: 'Pts', pj: 'J', w: 'V', d: 'E', l: 'D', gd: 'SG', gf: 'GP',
     tbd: 'A definir', vs: 'vs', passes: 'avança', repechage: 'repescagem', out: 'fora',

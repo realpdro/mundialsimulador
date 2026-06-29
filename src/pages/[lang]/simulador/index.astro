@@ -1,0 +1,52 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Simulator from '../../../components/Simulator.astro';
+import { LANGS, type Lang, GROUPS, LETTERS, teamName } from '../../../data/tournament';
+import { UI } from '../../../i18n/ui';
+import { homeUrl, calUrl, groupsUrl, groupUrl } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return LANGS.map((lang) => ({ params: { lang } }));
+}
+const lang = Astro.params.lang as Lang;
+const ui = UI[lang];
+const site = (Astro.site?.href ?? 'https://mundialsimulador.com/').replace(/\/$/, '');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: ui.brand.title,
+  url: `${site}/${lang}/simulador/`,
+  applicationCategory: 'SportsApplication',
+  operatingSystem: 'Web',
+  inLanguage: ui.htmlLang,
+  description: ui.meta.homeDesc,
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+};
+---
+<Base lang={lang} title={ui.meta.homeTitle} description={ui.meta.homeDesc} path="simulador/" active="simulator" jsonLd={jsonLd} breadcrumbs={[{ name: ui.nav.home, url: homeUrl(lang) }, { name: lang === 'en' ? 'Simulator' : 'Simulador', url: `/${lang}/simulador/` }]}>
+  <section class="hero">
+    <h1>{ui.hero.h1}</h1>
+    <p>{ui.hero.sub}</p>
+  </section>
+
+  <Simulator lang={lang} />
+
+  <section class="prose">
+    <h2>{ui.groups.title}</h2>
+    <p>{ui.groups.intro}</p>
+    <div class="tile-grid">
+      {LETTERS.map((L) => (
+        <a class="tile" href={groupUrl(lang, L)}>
+          <div class="tl-head"><span class="tag">{L}</span> {ui.common.group} {L}</div>
+          {GROUPS[L].map((code) => (
+            <div class="tl-team">{teamName(code, lang)}</div>
+          ))}
+        </a>
+      ))}
+    </div>
+
+    <h2>{ui.cal.title}</h2>
+    <p>{ui.cal.intro}</p>
+    <p><a href={calUrl(lang)}>→ {ui.nav.calendar}</a> · <a href={groupsUrl(lang)}>{ui.nav.groups}</a></p>
+  </section>
+</Base>
