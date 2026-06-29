@@ -1,5 +1,5 @@
 ---
-import { teamName, flagUrl, type Lang } from '../data/tournament';
+import { teamName, flagUrl, teamColor, type Lang } from '../data/tournament';
 import { spainTime, teamUrl } from '../lib/site';
 import { UI } from '../i18n/ui';
 
@@ -20,12 +20,13 @@ interface Props {
   bLabel?: string | null;
   previewText?: string | null;
 }
-const { lang, label = '', ko = false, koSpain, a, b, result = null, previewHref = null, aLabel = null, bLabel = null } = Astro.props;
+const { lang, label = '', koSpain, a, b, result = null, previewHref = null, aLabel = null, bLabel = null } = Astro.props;
 const ui = UI[lang];
 const r = result;
 const sa = r?.scores && a ? r.scores[a] : null;
 const sb = r?.scores && b ? r.scores[b] : null;
 const hasScore = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
+const live = !!r?.live;
 const winA = hasScore && (sa as number) > (sb as number);
 const winB = hasScore && (sb as number) > (sa as number);
 
@@ -36,28 +37,31 @@ const MONTHS = {
 }[lang];
 const d10 = (koSpain || '').slice(0, 10);
 const shortDate = d10 ? `${parseInt(d10.slice(8, 10), 10)} ${MONTHS[parseInt(d10.slice(5, 7), 10)]}` : '';
+const comp = label && label.length <= 14 ? label : shortDate;
+const fin = { es: 'Final', en: 'Final', pt: 'Final' }[lang];
+const status = hasScore ? fin : spainTime(koSpain);
 const pair = a && b ? [a, b].slice().sort().join('-') : undefined;
 const nA = a ? teamName(a, lang) : (aLabel ?? ui.common.tbd);
 const nB = b ? teamName(b, lang) : (bLabel ?? ui.common.tbd);
-const showTag = label && label.length <= 14;
 ---
-<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'} data-pair={pair} data-a={a ?? undefined} data-b={b ?? undefined}>
-  {previewHref && <a class="cm-stretch" href={previewHref} aria-label={`${nA} - ${nB}`}></a>}
-  <span class="cm-stat-col">
-    {shortDate && <em class="d">{shortDate}</em>}
-    {r?.live
-      ? <span class="live"></span>
-      : hasScore
-        ? <span class="fin">FT</span>
-        : <span class="time">{spainTime(koSpain)}</span>}
-  </span>
-  <div class="cm-teams">
+<div class={`am${hasScore || live ? ' played' : ''}`} style={`--ca:${teamColor(a)};--cb:${teamColor(b)}`} data-pair={pair} data-a={a ?? undefined} data-b={b ?? undefined}>
+  {previewHref && <a class="am-link" href={previewHref} aria-label={`${nA} - ${nB}`}></a>}
+  <div class={`am-side home${winB ? ' lose' : ''}`}>
     {a
-      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{nA}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
-      : <div class="cm-team"><span class="tname seed">{nA}</span></div>}
-    {b
-      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{nB}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
-      : <div class="cm-team"><span class="tname seed">{nB}</span></div>}
+      ? <a class="am-crest" href={teamUrl(lang, a)}><img class="flag" width="32" height="24" loading="lazy" src={flagUrl(a)} alt="" /></a>
+      : <span class="am-crest dot"></span>}
+    <span class="am-name">{nA}</span>
   </div>
-  {showTag && <span class={ko ? 'cm-tag ko' : 'cm-tag'}>{label}</span>}
+  <b class={`am-score${winA ? ' win' : ''}${winB ? ' lose' : ''}`} data-side="a">{hasScore ? sa : ''}</b>
+  <div class="am-mid">
+    {comp && <span class="am-comp">{comp}</span>}
+    <span class={`am-st${live ? ' live' : ''}${hasScore ? ' fin' : ''}`}>{live ? '•' : status}</span>
+  </div>
+  <b class={`am-score${winB ? ' win' : ''}${winA ? ' lose' : ''}`} data-side="b">{hasScore ? sb : ''}</b>
+  <div class={`am-side away${winA ? ' lose' : ''}`}>
+    <span class="am-name">{nB}</span>
+    {b
+      ? <a class="am-crest" href={teamUrl(lang, b)}><img class="flag" width="32" height="24" loading="lazy" src={flagUrl(b)} alt="" /></a>
+      : <span class="am-crest dot"></span>}
+  </div>
 </div>

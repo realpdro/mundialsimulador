@@ -50,37 +50,39 @@ function updateTicker(byPair: Record<string, Entry>, _c: Cfg) {
   });
 }
 
-function setScore(teamEl: Element, val: number | undefined) {
-  if (val == null) return;
-  let sc = teamEl.querySelector('.cm-score');
-  if (!sc) { sc = document.createElement('b'); sc.className = 'cm-score'; teamEl.appendChild(sc); }
+function setScoreEl(el: Element | null, val: number | undefined) {
+  if (!el || val == null) return;
   const next = String(val);
-  if (sc.textContent !== next) {
-    sc.textContent = next;
-    sc.classList.remove('flash');
-    void (sc as HTMLElement).offsetWidth;
-    sc.classList.add('flash');
+  if (el.textContent !== next) {
+    el.textContent = next;
+    el.classList.remove('flash');
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add('flash');
   }
 }
 
-function updateCards(byPair: Record<string, Entry>, c: Cfg) {
-  document.querySelectorAll<HTMLElement>('[data-pair]').forEach((card) => {
+function updateCards(byPair: Record<string, Entry>, _c: Cfg) {
+  document.querySelectorAll<HTMLElement>('.am[data-pair]').forEach((card) => {
     const v = byPair[card.getAttribute('data-pair') || ''];
     if (!v) return;
     const a = card.getAttribute('data-a'), b = card.getAttribute('data-b');
-    const teams = card.querySelectorAll<HTMLElement>('.cm-teams > .cm-team');
-    if (teams.length === 2 && v.scores && a && b) {
-      setScore(teams[0], v.scores[a]); setScore(teams[1], v.scores[b]);
-      teams[0].classList.toggle('win', v.winner === a);
-      teams[1].classList.toggle('win', v.winner === b);
+    const sa = card.querySelector('.am-score[data-side="a"]');
+    const sb = card.querySelector('.am-score[data-side="b"]');
+    if (v.scores && a && b) {
+      setScoreEl(sa, v.scores[a]);
+      setScoreEl(sb, v.scores[b]);
+      const w = v.winner;
+      if (w) {
+        card.querySelector('.am-side.home')?.classList.toggle('lose', w === b);
+        card.querySelector('.am-side.away')?.classList.toggle('lose', w === a);
+        sa?.classList.toggle('win', w === a); sa?.classList.toggle('lose', w === b);
+        sb?.classList.toggle('win', w === b); sb?.classList.toggle('lose', w === a);
+      }
     }
-    const stat = card.querySelector('.cm-stat-col');
-    if (stat) {
-      const old = stat.querySelector('.live, .fin, .time');
-      const badge = v.live
-        ? `<span class="live">${v.minute != null ? v.minute + "'" : ''}</span>`
-        : v.scores ? `<span class="fin">FT</span>` : null;
-      if (badge && old) old.outerHTML = badge;
+    const st = card.querySelector('.am-st');
+    if (st) {
+      if (v.live) { st.textContent = v.minute != null ? `${v.minute}'` : '•'; st.className = 'am-st live'; }
+      else if (v.scores) { st.textContent = 'Final'; st.className = 'am-st fin'; }
     }
     if (v.scores || v.live) card.classList.add('played');
   });

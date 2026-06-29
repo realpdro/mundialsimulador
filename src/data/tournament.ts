@@ -86,6 +86,19 @@ export function flagUrl(code: string | null | undefined, _w = 40): string {
   return `/flags/${TEAMS[code].iso}.webp`;
 }
 
+// Color primario de cada selección (de su bandera/equipación) para los degradados tipo Apple Sports.
+export const TEAM_COLOR: Record<string, string> = {
+  MEX: '#006847', RSA: '#007a4d', KOR: '#cd2e3a', CZE: '#11457e', CAN: '#d52b1e', QAT: '#8a1538',
+  SUI: '#d52b1e', BIH: '#1b4ca0', BRA: '#1e9e4a', MAR: '#c1272d', HAI: '#00209f', SCO: '#0065bf',
+  USA: '#3c3b6e', PAR: '#d52b1e', AUS: '#00843d', TUR: '#e30a17', GER: '#b11', CUW: '#13418f',
+  CIV: '#e07a00', ECU: '#c9a200', NED: '#ff6200', JPN: '#bc002d', TUN: '#e70013', SWE: '#3b6db8',
+  BEL: '#c79a00', EGY: '#c8102e', IRN: '#239f40', NZL: '#13306e', ESP: '#c60b1e', CPV: '#1b478f',
+  KSA: '#006c35', URU: '#4a78c4', FRA: '#1b3a9c', SEN: '#00853f', NOR: '#ba0c2f', IRQ: '#1b7a3d',
+  ARG: '#5b9bd5', ALG: '#0a7a3d', AUT: '#ed2939', JOR: '#1b7a3d', POR: '#c8102e', COL: '#c79a00',
+  UZB: '#1b9e3a', COD: '#1b7fdf', ENG: '#cf081f', CRO: '#d52b1e', GHA: '#0a8a3f', PAN: '#c20000',
+};
+export const teamColor = (code: string | null | undefined): string => (code && TEAM_COLOR[code]) || '#3a4252';
+
 export const GROUPS: Record<string, string[]> = {
   A: ['MEX', 'RSA', 'KOR', 'CZE'], B: ['CAN', 'QAT', 'SUI', 'BIH'], C: ['BRA', 'MAR', 'HAI', 'SCO'],
   D: ['USA', 'PAR', 'AUS', 'TUR'], E: ['GER', 'CUW', 'CIV', 'ECU'], F: ['NED', 'JPN', 'TUN', 'SWE'],
