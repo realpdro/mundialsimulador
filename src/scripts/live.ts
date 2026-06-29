@@ -73,12 +73,12 @@ function updateCards(byPair: Record<string, Entry>, c: Cfg) {
       teams[0].classList.toggle('win', v.winner === a);
       teams[1].classList.toggle('win', v.winner === b);
     }
-    const top = card.querySelector('.cm-top');
-    if (top) {
-      const old = top.querySelector('.cm-stat, .cm-time');
+    const stat = card.querySelector('.cm-stat-col');
+    if (stat) {
+      const old = stat.querySelector('.live, .fin, .time');
       const badge = v.live
-        ? `<span class="cm-stat live">🔴 ${c.labels.live}${v.minute != null ? " " + v.minute + "'" : ''}</span>`
-        : v.scores ? `<span class="cm-stat fin">${c.labels.fin}</span>` : null;
+        ? `<span class="live">${v.minute != null ? v.minute + "'" : ''}</span>`
+        : v.scores ? `<span class="fin">FT</span>` : null;
       if (badge && old) old.outerHTML = badge;
     }
     if (v.scores || v.live) card.classList.add('played');

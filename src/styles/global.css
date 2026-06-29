@@ -1,11 +1,11 @@
 :root{
-  --bg:#0a0f1c; --bg2:#0f1626; --card:#151e30; --card2:#1b2740;
-  --line:#26344f; --txt:#e8eefb; --muted:#8a99b8; --muted2:#62718f;
-  --green:#22c55e; --green2:#16a34a; --gold:#facc15; --red:#ef4444;
-  --accent:#38bdf8; --shadow:0 10px 30px rgba(0,0,0,.35);
+  --bg:#0e1116; --bg2:#12151c; --card:#171b22; --card2:#1d222b;
+  --line:#262b35; --txt:#e9edf3; --muted:#9aa3b2; --muted2:#646c7c;
+  --green:#22c55e; --green2:#16a34a; --gold:#f0b429; --red:#ff5a5f;
+  --accent:#38bdf8; --shadow:0 8px 24px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:radial-gradient(1200px 600px at 50% -10%,#16233e 0%,var(--bg) 55%);min-height:100%}
+html,body{background:var(--bg);min-height:100%}
 body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--txt);line-height:1.45;-webkit-font-smoothing:antialiased}
 img{display:block}
 a{color:inherit;text-decoration:none}
@@ -176,34 +176,35 @@ table.stand tr.q3 td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
 .round.tp .rhead{color:var(--muted2)}
 .ko-note{font-size:12px;color:var(--muted2);text-align:center;margin-top:16px;max-width:680px;margin-left:auto;margin-right:auto}
 
-/* calendar */
-.cal-day{margin-bottom:18px}
-.cal-dhead{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px;margin:0 2px 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.cal-dhead .dnum{color:var(--accent)}
-.cal-dhead .dcount{font-size:11px;color:var(--muted2);font-weight:600}
-.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
-.cal-match{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:13px;padding:11px 13px}
-.cal-match .cm-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted2);margin-bottom:8px}
-.cal-match .cm-top .gtag{background:#1c2942;color:var(--accent);font-weight:800;padding:2px 8px;border-radius:6px}
-.cal-match .cm-top .gtag{white-space:nowrap}
-.cal-match .cm-top .gtag.ko{background:rgba(250,204,21,.14);color:#fde047;border:1px solid rgba(250,204,21,.30)}
-.cal-match .cm-time{color:var(--txt);font-weight:800;font-size:13px}
-.cal-match .cm-time small{color:var(--muted2);font-weight:600}
-.cal-match .cm-teams{display:flex;flex-direction:column;gap:7px}
-.cal-match .cm-team{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
-a.cm-team{cursor:pointer;transition:.12s}
+/* calendar / match list (compact rows, SofaScore-style) */
+.cal-day{margin-bottom:20px}
+.cal-dhead{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;margin:0 auto 8px;max-width:680px;padding:0 4px 7px;border-bottom:1px solid var(--line);color:var(--muted)}
+.cal-dhead .dnum{color:var(--txt);font-weight:600}
+.cal-dhead .dcount{font-size:11px;color:var(--muted2);font-weight:500;margin-left:auto}
+.cal-grid{display:flex;flex-direction:column;max-width:680px;margin:0 auto;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.cal-match{position:relative;display:flex;align-items:stretch;gap:11px;padding:8px 14px 8px 0;border-top:1px solid var(--line)}
+.cal-match:first-child{border-top:none}
+.cal-match:hover{background:var(--card2)}
+.cm-stretch{position:absolute;inset:0;z-index:0}
+.cm-stat-col{width:58px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;line-height:1.15;position:relative;z-index:1;pointer-events:none;border-right:1px solid var(--line)}
+.cm-stat-col .d{font-style:normal;color:var(--muted2);font-size:10.5px}
+.cm-stat-col .time{color:var(--muted);font-weight:600;font-size:12px}
+.cm-stat-col .fin{color:var(--muted2);font-weight:700;font-size:10px}
+.cm-stat-col .live{color:var(--red);font-weight:800;font-size:11px;min-height:11px}
+.cm-stat-col .live::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:1px;animation:livepulse 1.4s infinite}
+.cm-teams{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px;position:relative;z-index:1;pointer-events:none;padding:2px 0}
+.cm-team{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;min-width:0;color:var(--muted);pointer-events:auto}
+a.cm-team{cursor:pointer}
 a.cm-team:hover .tname{text-decoration:underline;text-underline-offset:2px}
-.cal-match .cm-venue{font-size:11px;color:var(--muted2);margin-top:9px;display:flex;align-items:center;gap:6px}
-.cal-match .cm-note{font-size:11px;color:var(--gold);font-weight:600;margin-top:7px;display:flex;align-items:center;gap:5px}
-.cal-match.played{border-color:#2a3a52}
-.cm-stat{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap}
-.cm-stat.fin{background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28)}
-.cm-stat.live{background:rgba(239,68,68,.16);color:#fca5a5;border:1px solid rgba(239,68,68,.4);animation:livepulse 1.4s infinite}
-@keyframes livepulse{50%{opacity:.5}}
-.cal-match .cm-team .cm-score{margin-left:auto;font-size:16px;font-weight:800;color:var(--muted);min-width:18px;text-align:right}
-.cal-match .cm-team.win .cm-score{color:var(--txt)}
-.cal-match .cm-team.win .tname{color:#fff;font-weight:700}
-.cal-badge{font-size:12.5px;color:var(--muted2);margin-bottom:16px;text-align:center}
+.cm-team .tname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt)}
+.cm-team .tname.seed{color:var(--muted2);font-weight:500}
+.cm-team .cm-score{margin-left:auto;padding-left:10px;font-size:14px;font-weight:800;color:var(--muted2);min-width:14px;text-align:right;font-variant-numeric:tabular-nums}
+.cm-team.win .tname{color:#fff}
+.cm-team.win .cm-score{color:#fff}
+.cm-tag{position:relative;z-index:1;pointer-events:none;align-self:center;font-size:10px;color:var(--muted2);font-weight:600;white-space:nowrap;background:#212732;padding:3px 7px;border-radius:5px}
+.cm-tag.ko{color:var(--gold);background:rgba(240,180,41,.12)}
+@keyframes livepulse{50%{opacity:.45}}
+.cal-badge{font-size:12.5px;color:var(--muted2);margin:0 auto 14px;text-align:center;max-width:680px}
 
 /* groups overview + team cards */
 .tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}

@@ -1,12 +1,12 @@
 ---
 import { teamName, flagUrl, type Lang } from '../data/tournament';
-import { spainTime, overnightNote, teamUrl } from '../lib/site';
+import { spainTime, teamUrl } from '../lib/site';
 import { UI } from '../i18n/ui';
 
 interface Result { status: string; utc?: string; scores?: Record<string, number>; live?: boolean; }
 interface Props {
   lang: Lang;
-  label: string;
+  label?: string;
   ko?: boolean;
   koSpain: string | null;
   koLocal?: string | null;
@@ -16,41 +16,48 @@ interface Props {
   city?: string | null;
   result?: Result | null;
   previewHref?: string | null;
-  aLabel?: string | null; // procedencia cuando a es null (KO sin resolver): "1.º A", "Ganador P74"
+  aLabel?: string | null;
   bLabel?: string | null;
   previewText?: string | null;
 }
-const { lang, label, ko = false, koSpain, koLocal = null, a, b, stadium = null, city = null, result = null, previewHref = null, aLabel = null, bLabel = null, previewText = null } = Astro.props;
+const { lang, label = '', ko = false, koSpain, a, b, result = null, previewHref = null, aLabel = null, bLabel = null } = Astro.props;
 const ui = UI[lang];
-const FIN = { es: 'Final', en: 'Full-time', pt: 'Encerrado' }[lang];
-const LIVE = { es: '🔴 EN JUEGO', en: '🔴 LIVE', pt: '🔴 AO VIVO' }[lang];
-const PREV = { es: 'Previa y resultado →', en: 'Preview & result →', pt: 'Prévia e resultado →' }[lang];
 const r = result;
 const sa = r?.scores && a ? r.scores[a] : null;
 const sb = r?.scores && b ? r.scores[b] : null;
 const hasScore = sa !== null && sa !== undefined && sb !== null && sb !== undefined;
 const winA = hasScore && (sa as number) > (sb as number);
 const winB = hasScore && (sb as number) > (sa as number);
-const note = overnightNote(koSpain, lang);
+
+const MONTHS = {
+  es: ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+  en: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  pt: ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
+}[lang];
+const d10 = (koSpain || '').slice(0, 10);
+const shortDate = d10 ? `${parseInt(d10.slice(8, 10), 10)} ${MONTHS[parseInt(d10.slice(5, 7), 10)]}` : '';
+const pair = a && b ? [a, b].slice().sort().join('-') : undefined;
+const nA = a ? teamName(a, lang) : (aLabel ?? ui.common.tbd);
+const nB = b ? teamName(b, lang) : (bLabel ?? ui.common.tbd);
+const showTag = label && label.length <= 14;
 ---
-<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'} data-pair={a && b ? [a, b].sort().join('-') : undefined} data-a={a ?? undefined} data-b={b ?? undefined}>
-  <div class="cm-top">
-    <span class={ko ? 'gtag ko' : 'gtag'}>{label}</span>
+<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'} data-pair={pair} data-a={a ?? undefined} data-b={b ?? undefined}>
+  {previewHref && <a class="cm-stretch" href={previewHref} aria-label={`${nA} - ${nB}`}></a>}
+  <span class="cm-stat-col">
+    {shortDate && <em class="d">{shortDate}</em>}
     {r?.live
-      ? <span class="cm-stat live">{LIVE}</span>
+      ? <span class="live"></span>
       : hasScore
-        ? <span class="cm-stat fin">{FIN}</span>
-        : <span class="cm-time">{spainTime(koSpain)}h {koLocal && <small>({koLocal} {ui.common.localTime})</small>}</span>}
-  </div>
+        ? <span class="fin">FT</span>
+        : <span class="time">{spainTime(koSpain)}</span>}
+  </span>
   <div class="cm-teams">
     {a
-      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{teamName(a, lang)}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
-      : <div class="cm-team"><span class="tname" style={aLabel ? 'color:var(--muted2);font-weight:600' : ''}>{aLabel ?? ui.common.tbd}</span></div>}
+      ? <a class={winA ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, a)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(a)} alt="" /><span class="tname">{nA}</span>{hasScore && <b class="cm-score">{sa}</b>}</a>
+      : <div class="cm-team"><span class="tname seed">{nA}</span></div>}
     {b
-      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{teamName(b, lang)}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
-      : <div class="cm-team"><span class="tname" style={bLabel ? 'color:var(--muted2);font-weight:600' : ''}>{bLabel ?? ui.common.tbd}</span></div>}
+      ? <a class={winB ? 'cm-team win' : 'cm-team'} href={teamUrl(lang, b)}><img class="flag" width="23" height="16" loading="lazy" src={flagUrl(b)} alt="" /><span class="tname">{nB}</span>{hasScore && <b class="cm-score">{sb}</b>}</a>
+      : <div class="cm-team"><span class="tname seed">{nB}</span></div>}
   </div>
-  {(stadium || city) && <div class="cm-venue">📍 {stadium}{stadium && city ? ', ' : ''}{city}</div>}
-  {note && !hasScore && !r?.live && <div class="cm-note">{note}</div>}
-  {previewHref && <a href={previewHref} style="display:block;text-align:center;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);font-size:.78rem;font-weight:700;color:var(--accent)">{previewText ?? PREV}</a>}
+  {showTag && <span class={ko ? 'cm-tag ko' : 'cm-tag'}>{label}</span>}
 </div>
