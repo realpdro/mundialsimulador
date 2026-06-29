@@ -33,7 +33,7 @@ const winA = hasScore && (sa as number) > (sb as number);
 const winB = hasScore && (sb as number) > (sa as number);
 const note = overnightNote(koSpain, lang);
 ---
-<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'}>
+<div class={hasScore || r?.live ? 'cal-match played' : 'cal-match'} data-pair={a && b ? [a, b].sort().join('-') : undefined}>
   <div class="cm-top">
     <span class={ko ? 'gtag ko' : 'gtag'}>{label}</span>
     {r?.live

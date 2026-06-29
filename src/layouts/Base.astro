@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { LANGS, type Lang } from '../data/tournament';
 import { UI } from '../i18n/ui';
 import { homeUrl, calUrl, groupsUrl } from '../lib/site';
+import LivePoll from '../components/LivePoll.astro';
 
 interface Props {
   lang: Lang;
@@ -98,6 +99,7 @@ const navLinks = [
       </nav>
     </header>
 
+    <LivePoll lang={lang} />
     <slot />
 
     <footer class="site-foot">

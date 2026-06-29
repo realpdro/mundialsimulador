@@ -44,6 +44,12 @@ function walk(dir, out = []) {
   return out;
 }
 const distDir = join(root, 'dist');
+// Inyecta la API key en live.php (queda server-side; el repo solo tiene el placeholder __FD_KEY__).
+const livePhpPath = join(distDir, 'live.php');
+if (existsSync(livePhpPath)) {
+  const src = readFileSync(livePhpPath, 'utf8');
+  if (src.includes('__FD_KEY__')) writeFileSync(livePhpPath, src.replace('__FD_KEY__', env.FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY || ''));
+}
 const toRel = (abs) => abs.slice(distDir.length + 1).split('\\').join('/');
 const local = {};
 for (const abs of walk(distDir)) local[toRel(abs)] = createHash('md5').update(readFileSync(abs)).digest('hex');
