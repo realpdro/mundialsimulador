@@ -241,9 +241,9 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
   .feat::before { content:""; position:absolute; inset:0; z-index:0; background:radial-gradient(130% 130% at 10% 4%,var(--ca) 0%,transparent 55%),radial-gradient(130% 130% at 90% 96%,var(--cb) 0%,transparent 55%); opacity:.3; }
   .feat > * { position:relative; z-index:1; }
   .feat:hover { transform:translateY(-2px); transition:transform .18s ease; }
-  .feat-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; min-height:22px; }
+  .feat-head { display:flex; flex-direction:column; align-items:center; gap:5px; margin-bottom:14px; }
   .feat-status { font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .feat-status.live { display:inline-flex; align-items:center; gap:5px; color:#fff; background:var(--red); padding:3px 10px; border-radius:20px; box-shadow:0 0 14px rgba(255,90,77,.45); }
+  .feat-status.live { display:inline-flex; align-items:center; gap:5px; color:#fff; background:var(--red); padding:3px 11px; border-radius:20px; box-shadow:0 0 14px rgba(255,90,77,.45); }
   .feat-status.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:livepulse 1.4s infinite; }
   .feat-round { font-size:11px; color:var(--muted2); font-weight:600; }
   .feat-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
