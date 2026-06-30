@@ -35,13 +35,19 @@ const crumbJsonLd = breadcrumbs && breadcrumbs.length
     }
   : null;
 const navLinks = [
-  { key: 'simulator', href: `/${lang}/simulador/`, label: lang === 'en' ? 'Simulator' : 'Simulador' },
+  { key: 'home', href: homeUrl(lang), label: lang === 'en' ? 'Scores' : lang === 'pt' ? 'Placares' : 'Marcadores' },
   { key: 'bracket', href: `/${lang}/cuadro/`, label: lang === 'en' ? 'Bracket' : lang === 'pt' ? 'Chave' : 'Cuadro' },
   { key: 'qualified', href: `/${lang}/clasificados/`, label: lang === 'en' ? 'Qualified' : lang === 'pt' ? 'Classificados' : 'Clasificados' },
   { key: 'groups', href: groupsUrl(lang), label: ui.nav.groups },
   { key: 'calendar', href: calUrl(lang), label: ui.nav.calendar },
   { key: 'scorers', href: `/${lang}/goleadores/`, label: lang === 'en' ? 'Scorers' : lang === 'pt' ? 'Artilheiros' : 'Goleadores' },
+  { key: 'simulator', href: `/${lang}/simulador/`, label: lang === 'en' ? 'Simulator' : 'Simulador' },
 ];
+const bn = {
+  es: { scores: 'Marcadores', bracket: 'Cuadro', qualified: 'Clasific.', groups: 'Grupos', sim: 'Simulador' },
+  en: { scores: 'Scores', bracket: 'Bracket', qualified: 'Qualified', groups: 'Groups', sim: 'Simulator' },
+  pt: { scores: 'Placares', bracket: 'Chave', qualified: 'Classif.', groups: 'Grupos', sim: 'Simulador' },
+}[lang];
 ---
 <!doctype html>
 <html lang={ui.htmlLang}>
@@ -72,11 +78,12 @@ const navLinks = [
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImg} />
 
-  <meta name="theme-color" content="#0d0f14" />
+  <meta name="theme-color" content="#070a0f" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
   {jsonLd && (
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   )}
@@ -87,24 +94,23 @@ const navLinks = [
   <ClientRouter />
 </head>
 <body>
+  <div class="ambient" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span><span class="a4"></span></div>
+  <header class="appbar">
+    <a class="brand" href={homeUrl(lang)}><span class="mark">26</span><b>Mundial</b></a>
+    <nav class="navtabs">
+      {navLinks.map((n) => (
+        <a href={n.href} class={active === n.key ? 'active' : ''} {...(n.key === 'simulator' ? { 'data-astro-reload': true } : {})}>{n.label}</a>
+      ))}
+    </nav>
+    <span class="spacer"></span>
+    <span class="langpill">
+      {LANGS.map((l) => (
+        <a href={`/${l}/${path}`} class={l === lang ? 'on' : ''} hreflang={UI[l].htmlLang} {...(path === 'simulador/' ? { 'data-astro-reload': true } : {})}>{l}</a>
+      ))}
+    </span>
+  </header>
   <TopTicker lang={lang} />
   <div class="wrap">
-    <header class="site-head">
-      <a class="logo" href={homeUrl(lang)}>
-        <span class="crest">🏆</span>
-        <span><b>{ui.brand.title}</b><span>{ui.brand.tagline}</span></span>
-      </a>
-      <nav class="site-nav">
-        {navLinks.map((n) => (
-          <a href={n.href} class={active === n.key ? 'active' : ''} {...(n.key === 'simulator' ? { 'data-astro-reload': true } : {})}>{n.label}</a>
-        ))}
-        <span class="langsw">
-          {LANGS.map((l) => (
-            <a href={`/${l}/${path}`} class={l === lang ? 'on' : ''} hreflang={UI[l].htmlLang} {...(path === 'simulador/' ? { 'data-astro-reload': true } : {})}>{l}</a>
-          ))}
-        </span>
-      </nav>
-    </header>
 
     <slot />
 
@@ -126,6 +132,13 @@ const navLinks = [
       {ui.footer.disclaimer}
     </footer>
   </div>
+  <nav class="bottomnav">
+    <a href={homeUrl(lang)} class={active === 'home' ? 'active' : ''} aria-label={bn.scores}><i class="ti ti-ball-football" aria-hidden="true"></i><small>{bn.scores}</small></a>
+    <a href={`/${lang}/cuadro/`} class={active === 'bracket' ? 'active' : ''} aria-label={bn.bracket}><i class="ti ti-tournament" aria-hidden="true"></i><small>{bn.bracket}</small></a>
+    <a href={`/${lang}/clasificados/`} class={active === 'qualified' ? 'active' : ''} aria-label={bn.qualified}><i class="ti ti-list-check" aria-hidden="true"></i><small>{bn.qualified}</small></a>
+    <a href={groupsUrl(lang)} class={active === 'groups' ? 'active' : ''} aria-label={bn.groups}><i class="ti ti-layout-grid" aria-hidden="true"></i><small>{bn.groups}</small></a>
+    <a href={`/${lang}/simulador/`} class={active === 'simulator' ? 'active' : ''} data-astro-reload aria-label={bn.sim}><i class="ti ti-device-gamepad-2" aria-hidden="true"></i><small>{bn.sim}</small></a>
+  </nav>
   <script is:inline>
     (function(){function reveal(){var h=document.documentElement;if(h.classList.contains('rm')||!('IntersectionObserver' in window))return;var sel='.page-head,.hero,.section-h,.cal-grid,.tile,.team-card,.qcard,.vcard,.trophy-card,.hub-link,.scen-card,.group,.tw,.sim-promo,.bk-card,.qa,.hero-match,.segwrap';var els=[].slice.call(document.querySelectorAll(sel.replace(/(,|$)/g,':not(.in)$1')));if(!els.length)return;var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:0.06,rootMargin:'0px 0px -40px 0px'});els.forEach(function(el){io.observe(el);});setTimeout(function(){els.forEach(function(el){el.classList.add('in');});},1600);}document.addEventListener('astro:page-load',reveal);})();
   </script>
