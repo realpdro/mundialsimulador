@@ -88,6 +88,32 @@ function updateCards(byPair: Record<string, Entry>, _c: Cfg) {
   });
 }
 
+// Tarjeta destacada (.feat): estructura propia, no .am. Mantiene marcador + etiqueta coherentes
+// (un destacado elegido como "próximo" en el build que ya se ha jugado pasa a "Final", no se queda en "Próximo").
+function updateFeatured(byPair: Record<string, Entry>, c: Cfg) {
+  const f = document.querySelector<HTMLElement>('.feat[data-pair]');
+  if (!f) return;
+  const v = byPair[f.getAttribute('data-pair') || ''];
+  if (!v) return;
+  const a = f.getAttribute('data-a'), b = f.getAttribute('data-b');
+  if (v.scores && a && b) {
+    const sa = f.querySelector('.feat-score b[data-side="a"]');
+    const sb = f.querySelector('.feat-score b[data-side="b"]');
+    if (sa) setScoreEl(sa, v.scores[a]);
+    if (sb) setScoreEl(sb, v.scores[b]);
+    f.classList.add('played');
+  }
+  const st = f.querySelector('.feat-st');
+  const tag = f.querySelector('.feat-tag');
+  if (v.live) {
+    if (st) { st.textContent = v.minute != null ? `${v.minute}'` : '•'; st.className = 'feat-st live'; }
+    if (tag) { tag.textContent = c.labels.live; tag.className = 'feat-tag live'; }
+  } else if (v.scores) {
+    if (st) { st.textContent = 'Final'; st.className = 'feat-st'; }
+    if (tag) { tag.textContent = 'Final'; tag.className = 'feat-tag'; }
+  }
+}
+
 function updateStandings(byPair: Record<string, Entry>, c: Cfg) {
   // clasificados: rejilla por grupo
   document.querySelectorAll<HTMLElement>('.qcard[data-group]').forEach((card) => {
@@ -145,6 +171,7 @@ export function startLive() {
       .then((d) => {
         if (!d || !d.byPair) return;
         updateTicker(d.byPair, c!);
+        updateFeatured(d.byPair, c!);
         updateCards(d.byPair, c!);
         updateStandings(d.byPair, c!);
       })

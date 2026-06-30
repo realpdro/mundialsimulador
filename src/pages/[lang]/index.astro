@@ -109,32 +109,27 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
 
   {HERO && (
     <a
-      class={`am hero-match${HERO.hasScore || HERO.live ? ' played' : ''}`}
+      class={`feat glass${HERO.hasScore ? ' played' : ''}`}
       href={HERO.href ?? undefined}
       style={`--ca:${teamColor(HERO.a)};--cb:${teamColor(HERO.b)}`}
       data-pair={HERO.pair} data-a={HERO.a} data-b={HERO.b}
       aria-label={`${teamName(HERO.a, lang)} - ${teamName(HERO.b, lang)}`}
     >
-      <span class={`hm-tag${HERO.live ? ' live' : ''}`}>{HERO.live ? heroTag.live : heroTag.next}</span>
-
-      <div class={`am-side home${HERO.hasScore && HERO.sb! > HERO.sa! ? ' lose' : ''}`}>
-        <span class="am-crest"><img class="flag" width="60" height="45" src={flagUrl(HERO.a)} alt="" /></span>
-        <span class="am-name">{teamName(HERO.a, lang)}</span>
-      </div>
-
-      <div class="hm-center">
-        <div class="hm-kick"><span class="hm-time">{HERO.time}</span><span class="hm-date">{HERO.date}</span></div>
-        <div class="hm-score">
-          <b class={`am-score${HERO.hasScore && HERO.sa! > HERO.sb! ? ' win' : ''}${HERO.hasScore && HERO.sa! < HERO.sb! ? ' lose' : ''}`} data-side="a">{HERO.hasScore ? HERO.sa : ''}</b>
-          <span class="hm-dash">–</span>
-          <b class={`am-score${HERO.hasScore && HERO.sb! > HERO.sa! ? ' win' : ''}${HERO.hasScore && HERO.sb! < HERO.sa! ? ' lose' : ''}`} data-side="b">{HERO.hasScore ? HERO.sb : ''}</b>
+      <span class={`feat-tag${HERO.live ? ' live' : ''}`}>{HERO.live ? heroTag.live : (HERO.hasScore ? 'Final' : heroTag.next)}</span>
+      <div class="feat-row">
+        <div class="feat-team">
+          <img class="flag" width="52" height="39" src={flagUrl(HERO.a)} alt="" />
+          <span class="feat-name">{teamName(HERO.a, lang)}</span>
         </div>
-        <span class={`am-st${HERO.live ? ' live' : ''}${HERO.hasScore ? ' fin' : ''}`}>{HERO.live ? '•' : (HERO.hasScore ? 'Final' : HERO.label)}</span>
-      </div>
-
-      <div class={`am-side away${HERO.hasScore && HERO.sa! > HERO.sb! ? ' lose' : ''}`}>
-        <span class="am-name">{teamName(HERO.b, lang)}</span>
-        <span class="am-crest"><img class="flag" width="60" height="45" src={flagUrl(HERO.b)} alt="" /></span>
+        <div class="feat-mid">
+          <div class="feat-kick"><span class="feat-time">{HERO.time}</span><span class="feat-date">{HERO.date}</span></div>
+          <div class="feat-score"><b data-side="a">{HERO.hasScore ? HERO.sa : ''}</b><span>–</span><b data-side="b">{HERO.hasScore ? HERO.sb : ''}</b></div>
+          <span class={`feat-st${HERO.live ? ' live' : ''}`}>{HERO.live ? '•' : (HERO.hasScore ? 'Final' : HERO.label)}</span>
+        </div>
+        <div class="feat-team">
+          <img class="flag" width="52" height="39" src={flagUrl(HERO.b)} alt="" />
+          <span class="feat-name">{teamName(HERO.b, lang)}</span>
+        </div>
       </div>
     </a>
   )}
@@ -235,38 +230,28 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
   .sim-card .btn { white-space:nowrap; }
   @media (max-width:460px){ .sim-card .btn { display:none; } }
 
-  /* ---------- Tarjeta HERO (partido destacado) ---------- */
-  .hero-match { position:relative; display:flex; align-items:center; gap:14px; max-width:680px; margin:0 auto 22px; padding:26px 22px; border-radius:22px; overflow:hidden; isolation:isolate; background:var(--glass-tint); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border:1px solid var(--glass-line); box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow); }
-  .hero-match::before { content:""; position:absolute; inset:0; z-index:0; background:radial-gradient(130% 130% at 10% 4%,var(--ca) 0%,transparent 54%),radial-gradient(130% 130% at 90% 96%,var(--cb) 0%,transparent 54%); opacity:.3; }
-  .hero-match > * { position:relative; z-index:1; }
-  .hero-match:hover { transform:translateY(-2px); transition:transform .18s ease; }
-  .hm-tag { position:absolute; top:14px; left:16px; z-index:2; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.75); background:rgba(255,255,255,.1); padding:5px 10px; border-radius:20px; backdrop-filter:blur(8px); }
-  .hm-tag.live { color:#fff; background:var(--red); box-shadow:0 0 16px rgba(255,69,58,.5); animation:livepulse 1.4s infinite; }
-  .hero-match .am-side { flex:1; min-width:0; display:flex; align-items:center; gap:12px; }
-  .hero-match .am-side.away { justify-content:flex-end; }
-  .hero-match .am-crest .flag { width:60px; height:45px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.16); }
-  .hero-match .am-name { font-size:18px; font-weight:700; color:var(--txt); }
-  .hero-match .am-side.lose .am-name { color:var(--muted); }
-  .hm-center { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:96px; }
-  .hm-score { display:none; align-items:center; gap:8px; }
-  .hero-match .am-score { font-size:44px; line-height:1; font-weight:800; color:var(--txt); }
-  .hero-match .am-score.lose { color:rgba(255,255,255,.5); }
-  .hm-dash { font-size:30px; font-weight:300; color:rgba(255,255,255,.4); }
-  .hm-kick { display:flex; flex-direction:column; align-items:center; }
-  .hm-time { font-size:34px; font-weight:800; color:#fff; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
-  .hm-date { font-size:12px; font-weight:600; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.05em; }
-  .hero-match .am-st { font-size:13px; font-weight:700; color:rgba(255,255,255,.62); }
-  .hero-match .am-st.live { color:#fff; }
-  .hero-match.played .hm-kick { display:none; }
-  .hero-match.played .hm-score { display:flex; }
-  @media (max-width:480px){
-    .hero-match { gap:8px; padding:22px 14px; }
-    .hero-match .am-name { font-size:14px; }
-    .hero-match .am-crest .flag { width:46px; height:35px; }
-    .hero-match .am-score { font-size:36px; }
-    .hm-time { font-size:28px; }
-    .hm-center { min-width:80px; }
-  }
+  /* ---------- Tarjeta destacada (featured, autocontenida) ---------- */
+  .feat { position:relative; display:block; max-width:680px; margin:0 auto 22px; padding:30px 16px 20px; border-radius:22px; overflow:hidden; isolation:isolate; box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow); }
+  .feat::before { content:""; position:absolute; inset:0; z-index:0; background:radial-gradient(130% 130% at 10% 4%,var(--ca) 0%,transparent 55%),radial-gradient(130% 130% at 90% 96%,var(--cb) 0%,transparent 55%); opacity:.3; }
+  .feat > * { position:relative; z-index:1; }
+  .feat:hover { transform:translateY(-2px); transition:transform .18s ease; }
+  .feat-tag { position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:2; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.78); background:rgba(255,255,255,.12); padding:4px 11px; border-radius:20px; backdrop-filter:blur(8px); white-space:nowrap; }
+  .feat-tag.live { color:#fff; background:var(--red); box-shadow:0 0 16px rgba(255,90,77,.5); animation:livepulse 1.4s infinite; }
+  .feat-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-top:6px; }
+  .feat-team { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center; }
+  .feat-team .flag { width:52px; height:39px; border-radius:7px; box-shadow:0 3px 12px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.14); }
+  .feat-name { font-size:13.5px; font-weight:600; color:var(--txt); line-height:1.25; }
+  .feat-mid { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:90px; padding-top:4px; }
+  .feat-score { display:none; align-items:center; gap:9px; }
+  .feat-score b { font-size:40px; font-weight:800; color:#fff; line-height:1; font-variant-numeric:tabular-nums; }
+  .feat-score > span { font-size:24px; font-weight:300; color:rgba(255,255,255,.4); }
+  .feat-kick { display:flex; flex-direction:column; align-items:center; }
+  .feat-time { font-size:30px; font-weight:800; color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .feat-date { font-size:11px; font-weight:600; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.04em; }
+  .feat-st { font-size:12px; font-weight:700; color:rgba(255,255,255,.6); margin-top:2px; }
+  .feat-st.live { color:#ff7a6e; }
+  .feat.played .feat-kick { display:none; }
+  .feat.played .feat-score { display:flex; }
 
   /* ---------- Segmented control (Ayer · Hoy · Próximos) ---------- */
   .segwrap { max-width:680px; margin:0 auto; }
