@@ -103,14 +103,10 @@ function updateFeatured(byPair: Record<string, Entry>, c: Cfg) {
     if (sb) setScoreEl(sb, v.scores[b]);
     f.classList.add('played');
   }
-  const st = f.querySelector('.feat-st');
-  const tag = f.querySelector('.feat-tag');
-  if (v.live) {
-    if (st) { st.textContent = v.minute != null ? `${v.minute}'` : '•'; st.className = 'feat-st live'; }
-    if (tag) { tag.textContent = c.labels.live; tag.className = 'feat-tag live'; }
-  } else if (v.scores) {
-    if (st) { st.textContent = 'Final'; st.className = 'feat-st'; }
-    if (tag) { tag.textContent = 'Final'; tag.className = 'feat-tag'; }
+  const st = f.querySelector('.feat-status');
+  if (st) {
+    if (v.live) { st.textContent = c.labels.live; st.className = 'feat-status live'; }
+    else if (v.scores) { st.textContent = 'Final'; st.className = 'feat-status'; }
   }
 }
 

@@ -42,18 +42,6 @@ const yesterdayRows = rows.filter((r) => r.day === yMad);
 const todayRows = rows.filter((r) => r.day === todayMadrid);
 const futureDays = [...new Set(rows.filter((r) => r.day > todayMadrid).map((r) => r.day))].slice(0, 2);
 const upcomingRows = rows.filter((r) => futureDays.includes(r.day));
-const defaultSeg = todayRows.length ? 'today' : (upcomingRows.length ? 'next' : 'yest');
-const SEG = {
-  es: { yest: 'Ayer', today: 'Hoy', next: 'Próximos', empty: 'No hay partidos.' },
-  en: { yest: 'Yesterday', today: 'Today', next: 'Upcoming', empty: 'No matches.' },
-  pt: { yest: 'Ontem', today: 'Hoje', next: 'Próximos', empty: 'Sem jogos.' },
-}[lang];
-const segPanels = [
-  { id: 'yest', label: SEG.yest, rows: yesterdayRows },
-  { id: 'today', label: SEG.today, rows: todayRows },
-  { id: 'next', label: SEG.next, rows: upcomingRows },
-];
-
 // --- Partido destacado (HERO): en vivo > próximo de hoy > próximo en general > último jugado ---
 const playable = rows.filter((r) => r.a && r.b);
 const nowMadT = `${todayMadrid}T${new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date())}`;
@@ -64,6 +52,22 @@ const upcomingToday = playable.find((r) => r.day === todayMadrid && !r.result?.s
 const nextOverall = playable.find((r) => r.day > todayMadrid);
 const lastPlayed = [...playable].reverse().find((r) => r.result?.scores);
 const featured = liveRow ?? upcomingToday ?? nextOverall ?? lastPlayed ?? null;
+
+// Listas del segmentado, excluyendo el destacado para no duplicarlo.
+const SEG = {
+  es: { yest: 'Ayer', today: 'Hoy', next: 'Próximos', empty: 'No hay partidos.' },
+  en: { yest: 'Yesterday', today: 'Today', next: 'Upcoming', empty: 'No matches.' },
+  pt: { yest: 'Ontem', today: 'Hoje', next: 'Próximos', empty: 'Sem jogos.' },
+}[lang];
+const ydList = yesterdayRows.filter((r) => r !== featured);
+const tdList = todayRows.filter((r) => r !== featured);
+const upList = upcomingRows.filter((r) => r !== featured);
+const defaultSeg = tdList.length ? 'today' : (upList.length ? 'next' : 'yest');
+const segPanels = [
+  { id: 'yest', label: SEG.yest, rows: ydList },
+  { id: 'today', label: SEG.today, rows: tdList },
+  { id: 'next', label: SEG.next, rows: upList },
+];
 
 const FB_MONTH = { es: ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'], en: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], pt: ['', 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'] }[lang];
 function heroData(r: Row | null) {
@@ -81,7 +85,7 @@ function heroData(r: Row | null) {
   };
 }
 const HERO = heroData(featured);
-const heroTag = { es: { live: 'EN VIVO', next: 'Próximo partido' }, en: { live: 'LIVE', next: 'Up next' }, pt: { live: 'AO VIVO', next: 'A seguir' } }[lang];
+const heroTag = { es: { live: 'EN JUEGO', next: 'Próximo partido' }, en: { live: 'LIVE', next: 'Up next' }, pt: { live: 'AO VIVO', next: 'A seguir' } }[lang];
 
 const C = {
   es: { title: 'Resultados del Mundial 2026 en directo · marcadores y clasificación', desc: 'Marcadores en vivo del Mundial 2026: partidos de hoy, resultados, clasificación de los grupos, cuadro de eliminatorias y máximos goleadores. Todo en directo y se actualiza solo.', h1: 'Mundial 2026 en directo', intro: 'Resultados, partidos de hoy, clasificación y cuadro de eliminatorias — en vivo y se actualiza solo.', seeCal: 'Calendario completo', groupsH: 'Grupos del Mundial 2026', simH: '¿Y tú, cómo crees que acaba?', simSub: 'Predice todos los partidos, monta el cuadro y descubre tu campeón.', simCta: 'Abrir el simulador' },
@@ -115,7 +119,10 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
       data-pair={HERO.pair} data-a={HERO.a} data-b={HERO.b}
       aria-label={`${teamName(HERO.a, lang)} - ${teamName(HERO.b, lang)}`}
     >
-      <span class={`feat-tag${HERO.live ? ' live' : ''}`}>{HERO.live ? heroTag.live : (HERO.hasScore ? 'Final' : heroTag.next)}</span>
+      <div class="feat-head">
+        <span class={`feat-status${HERO.live ? ' live' : ''}`}>{HERO.live ? heroTag.live : (HERO.hasScore ? 'Final' : heroTag.next)}</span>
+        <span class="feat-round">{HERO.label}</span>
+      </div>
       <div class="feat-row">
         <div class="feat-team">
           <img class="flag" width="52" height="39" src={flagUrl(HERO.a)} alt="" />
@@ -124,7 +131,6 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
         <div class="feat-mid">
           <div class="feat-kick"><span class="feat-time">{HERO.time}</span><span class="feat-date">{HERO.date}</span></div>
           <div class="feat-score"><b data-side="a">{HERO.hasScore ? HERO.sa : ''}</b><span>–</span><b data-side="b">{HERO.hasScore ? HERO.sb : ''}</b></div>
-          <span class={`feat-st${HERO.live ? ' live' : ''}`}>{HERO.live ? '•' : (HERO.hasScore ? 'Final' : HERO.label)}</span>
         </div>
         <div class="feat-team">
           <img class="flag" width="52" height="39" src={flagUrl(HERO.b)} alt="" />
@@ -231,25 +237,26 @@ const SCO = { es: { title: 'Bota de Oro', all: 'Ver todos' }, en: { title: 'Gold
   @media (max-width:460px){ .sim-card .btn { display:none; } }
 
   /* ---------- Tarjeta destacada (featured, autocontenida) ---------- */
-  .feat { position:relative; display:block; max-width:680px; margin:0 auto 22px; padding:30px 16px 20px; border-radius:22px; overflow:hidden; isolation:isolate; box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow); }
+  .feat { position:relative; display:block; max-width:680px; margin:0 auto 22px; padding:15px 16px 18px; border-radius:22px; overflow:hidden; isolation:isolate; box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow); }
   .feat::before { content:""; position:absolute; inset:0; z-index:0; background:radial-gradient(130% 130% at 10% 4%,var(--ca) 0%,transparent 55%),radial-gradient(130% 130% at 90% 96%,var(--cb) 0%,transparent 55%); opacity:.3; }
   .feat > * { position:relative; z-index:1; }
   .feat:hover { transform:translateY(-2px); transition:transform .18s ease; }
-  .feat-tag { position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:2; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.78); background:rgba(255,255,255,.12); padding:4px 11px; border-radius:20px; backdrop-filter:blur(8px); white-space:nowrap; }
-  .feat-tag.live { color:#fff; background:var(--red); box-shadow:0 0 16px rgba(255,90,77,.5); animation:livepulse 1.4s infinite; }
-  .feat-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-top:6px; }
+  .feat-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; min-height:22px; }
+  .feat-status { font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .feat-status.live { display:inline-flex; align-items:center; gap:5px; color:#fff; background:var(--red); padding:3px 10px; border-radius:20px; box-shadow:0 0 14px rgba(255,90,77,.45); }
+  .feat-status.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:livepulse 1.4s infinite; }
+  .feat-round { font-size:11px; color:var(--muted2); font-weight:600; }
+  .feat-row { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
   .feat-team { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:9px; text-align:center; }
   .feat-team .flag { width:52px; height:39px; border-radius:7px; box-shadow:0 3px 12px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.14); }
   .feat-name { font-size:13.5px; font-weight:600; color:var(--txt); line-height:1.25; }
-  .feat-mid { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:90px; padding-top:4px; }
+  .feat-mid { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:90px; padding-top:2px; }
   .feat-score { display:none; align-items:center; gap:9px; }
   .feat-score b { font-size:40px; font-weight:800; color:#fff; line-height:1; font-variant-numeric:tabular-nums; }
   .feat-score > span { font-size:24px; font-weight:300; color:rgba(255,255,255,.4); }
   .feat-kick { display:flex; flex-direction:column; align-items:center; }
   .feat-time { font-size:30px; font-weight:800; color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
   .feat-date { font-size:11px; font-weight:600; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.04em; }
-  .feat-st { font-size:12px; font-weight:700; color:rgba(255,255,255,.6); margin-top:2px; }
-  .feat-st.live { color:#ff7a6e; }
   .feat.played .feat-kick { display:none; }
   .feat.played .feat-score { display:flex; }
 
