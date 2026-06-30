@@ -102,7 +102,7 @@ const PH = {
 }[lang];
 ---
 <Base lang={lang} title={C.title} description={C.desc} path="" active="home">
-  <div class="page-head" style="padding-bottom:14px"><h1>{C.h1}</h1><p>{C.intro}</p></div>
+  <div class="home-head"><h1>{C.h1}</h1></div>
 
   {HERO && (
     <a
@@ -161,70 +161,20 @@ const PH = {
     ))}
   </div>
 
-  <p style="text-align:center;margin-top:14px"><a class="btn" href={calUrl(lang)}>{C.seeCal} →</a></p>
-
-  <div class="hub-grid">
-    {HUB.map(([slug, label]) => (
-      <a class="hub-link" href={`/${lang}/${slug}/`}>{label}</a>
-    ))}
-  </div>
-
-  <a class="sim-promo" href={`/${lang}/simulador/`} data-astro-reload>
-    <div><b>{C.simH}</b><span>{C.simSub}</span></div>
-    <span class="btn primary">{C.simCta}</span>
-  </a>
-
-  {groupStageDone && (
-    <>
-      <h2 class="section-h">{PH.koH}</h2>
-      <div class="ko-rounds">
-        {koRounds.map((r, i) => (
-          <a class={`ko-round${i === currentRoundIdx ? ' current' : ''}${r.done >= r.total ? ' done' : ''}`} href={roundUrl(lang, r.round)}>
-            <b>{r.name}</b>
-            <span>{r.done >= r.total ? '✓' : `${r.done}/${r.total}`}</span>
-          </a>
-        ))}
-      </div>
-      <p style="text-align:center;margin-top:10px"><a class="btn" href={`/${lang}/cuadro/`}>{PH.seeBracket} →</a></p>
-    </>
-  )}
-
-  <h2 class="section-h">{groupStageDone ? PH.groupsDoneH : C.groupsH}</h2>
-  <div class="tile-grid">
-    {LETTERS.map((L) => (
-      <a class="tile" href={groupUrl(lang, L)}>
-        <div class="tl-head"><span class="tag">{L}</span> {ui.common.group} {L}</div>
-        {GROUPS[L].map((code) => (<div class="tl-team">{teamName(code, lang)}</div>))}
-      </a>
-    ))}
+  <div class="home-foot">
+    <a class="btn ghost lg" href={`/${lang}/simulador/`} data-astro-reload><i class="ti ti-device-gamepad-2" aria-hidden="true"></i> {C.simCta}</a>
   </div>
 </Base>
 
 <style>
-  .hub-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; max-width:680px; margin:22px auto 0; }
-  .hub-link { display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; color:var(--txt); font-weight:600; font-size:14px; }
-  .hub-link:hover { border-color:var(--accent); background:var(--card2); }
-  .sim-promo { display:flex; align-items:center; gap:16px; max-width:680px; margin:14px auto 0; background:linear-gradient(100deg,rgba(34,197,94,.12),rgba(56,189,248,.1)); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--txt); }
-  .sim-promo div { flex:1; display:flex; flex-direction:column; gap:3px; }
-  .sim-promo b { font-size:15px; }
-  .sim-promo span { font-size:13px; color:var(--muted); }
-  .sim-promo .btn { white-space:nowrap; }
-
-  /* ---------- Rondas de eliminatorias (home en fase KO) ---------- */
-  .ko-rounds { display:flex; gap:8px; max-width:680px; margin:0 auto; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
-  .ko-rounds::-webkit-scrollbar { display:none; }
-  .ko-round { flex:1 0 auto; min-width:98px; display:flex; flex-direction:column; align-items:center; gap:5px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 10px; color:var(--txt); }
-  .ko-round b { font-size:13px; font-weight:700; white-space:nowrap; }
-  .ko-round span { font-size:11px; color:var(--muted2); font-weight:800; font-variant-numeric:tabular-nums; }
-  .ko-round.current { border-color:var(--green); box-shadow:0 0 0 1px var(--green),0 6px 18px rgba(48,209,88,.16); }
-  .ko-round.current span { color:var(--green); }
-  .ko-round.done { opacity:.62; }
-  .ko-round:hover { border-color:var(--accent); }
+  .home-head { max-width:680px; margin:0 auto; padding:8px 2px 18px; }
+  .home-head h1 { font-size:21px; font-weight:700; letter-spacing:-.02em; color:var(--txt); }
+  .home-foot { max-width:680px; margin:34px auto 8px; display:flex; justify-content:center; }
 
   /* ---------- Tarjeta HERO (partido destacado) ---------- */
-  .hero-match { position:relative; display:flex; align-items:center; gap:14px; max-width:680px; margin:0 auto 18px; padding:26px 22px; background:#0d0f15; border-radius:22px; overflow:hidden; box-shadow:var(--shadow); isolation:isolate; }
-  .hero-match::before { content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(120% 140% at 0% 0%,var(--ca) 0%,transparent 52%),radial-gradient(120% 140% at 100% 100%,var(--cb) 0%,transparent 52%); opacity:.72; }
-  .hero-match::after { content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(72% 120% at 50% 50%,rgba(8,9,12,.55),transparent 72%); }
+  .hero-match { position:relative; display:flex; align-items:center; gap:14px; max-width:680px; margin:0 auto 22px; padding:26px 22px; border-radius:22px; overflow:hidden; isolation:isolate; background:var(--glass-tint); backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur); border:1px solid var(--glass-line); box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow); }
+  .hero-match::before { content:""; position:absolute; inset:0; z-index:0; background:radial-gradient(130% 130% at 10% 4%,var(--ca) 0%,transparent 54%),radial-gradient(130% 130% at 90% 96%,var(--cb) 0%,transparent 54%); opacity:.3; }
+  .hero-match > * { position:relative; z-index:1; }
   .hero-match:hover { transform:translateY(-2px); transition:transform .18s ease; }
   .hm-tag { position:absolute; top:14px; left:16px; z-index:2; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.75); background:rgba(255,255,255,.1); padding:5px 10px; border-radius:20px; backdrop-filter:blur(8px); }
   .hm-tag.live { color:#fff; background:var(--red); box-shadow:0 0 16px rgba(255,69,58,.5); animation:livepulse 1.4s infinite; }

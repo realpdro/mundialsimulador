@@ -31,24 +31,7 @@ const fmt = (c: C) => {
   return { sa, sb, has, lv: !!c.r?.live, pair: c.a && c.b ? [c.a, c.b].slice().sort().join('-') : undefined, time: c.koSpain ? c.koSpain.slice(11, 16) : '' };
 };
 ---
-{chips.length > 0 && (
-  <div class="tkbar">
-    <a class="tk-live-lbl" href={`/${lang}/partidos-de-hoy/`}>{live.length > 0 ? '🔴' : '⚽'}</a>
-    <div class="tkscroll">
-      {chips.map((c) => {
-        const f = fmt(c);
-        return (
-          <div class={f.lv ? 'tk-chip live' : 'tk-chip'} data-pair={f.pair} data-a={c.a ?? undefined} data-b={c.b ?? undefined}>
-            <span class={f.lv ? 'tk-stat live' : 'tk-stat'}>{f.lv ? '•' : f.has ? 'FT' : f.time}</span>
-            {c.a && <img class="tkf" width="17" height="12" loading="lazy" src={`/flags/${TEAMS[c.a].iso}.webp`} alt="" />}
-            <span class="tk-sc">{f.has ? `${f.sa}-${f.sb}` : '-'}</span>
-            {c.b && <img class="tkf" width="17" height="12" loading="lazy" src={`/flags/${TEAMS[c.b].iso}.webp`} alt="" />}
-          </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+{/* Barra de ticker retirada para aligerar la navegación; el motor live sigue activo abajo. */}
 <script type="application/json" id="live-cfg" is:inline set:html={JSON.stringify(cfg)}></script>
 <script>
   import { startLive } from '../scripts/live';
